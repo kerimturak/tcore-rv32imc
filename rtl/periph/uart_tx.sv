@@ -66,7 +66,7 @@ module uart_tx
     case (c_state)
       IDLE:                                       // Initial state
         begin
-        n_state  = (!empty_o & tx_en_i) ? SENDING : IDLE;  // If buffer is not empty and tx_en so we can go sending state
+        n_state  = (!empty_o && tx_en_i) ? SENDING : IDLE;  // If buffer is not empty and tx_en so we can go sending state
         tx_bit_o = 1'b1;  // In idle tx channel active high
       end
       SENDING: begin
@@ -91,7 +91,7 @@ module uart_tx
         rd_ptr      <= bit_counter == 9 ? rd_ptr + 1 : rd_ptr;
       end
 
-      if (tx_we_i & !full_o) begin  // If tx_we_i and buffer is not full_o write operation is active
+      if (tx_we_i && !full_o) begin  // If tx_we_i and buffer is not full_o write operation is active
         tx_buffer[wr_ptr[$clog2(DEPTH)-1:0]] <= din_i;
         wr_ptr                               <= wr_ptr + 1'b1;
       end

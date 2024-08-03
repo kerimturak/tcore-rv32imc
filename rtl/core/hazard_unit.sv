@@ -49,30 +49,30 @@ module hazard_unit (
 
   always_comb begin
 
-    if (rf_rw_me_i & (r1_addr_ex_i == rd_addr_me_i) & (r1_addr_ex_i != 0)) begin
+    if (rf_rw_me_i && (r1_addr_ex_i == rd_addr_me_i) && (r1_addr_ex_i != 0)) begin
       fwd_a_ex_o = 2'b10;
-    end else if (rf_rw_wb_i & (r1_addr_ex_i == rd_addr_wb_i) & (r1_addr_ex_i != 0)) begin
+    end else if (rf_rw_wb_i && (r1_addr_ex_i == rd_addr_wb_i) && (r1_addr_ex_i != 0)) begin
       fwd_a_ex_o = 2'b01;
     end else begin
       fwd_a_ex_o = 2'b00;
     end
 
-    if (rf_rw_me_i & (r2_addr_ex_i == rd_addr_me_i) & (r2_addr_ex_i != 0)) begin
+    if (rf_rw_me_i && (r2_addr_ex_i == rd_addr_me_i) && (r2_addr_ex_i != 0)) begin
       fwd_b_ex_o = 2'b10;
-    end else if (rf_rw_wb_i & (r2_addr_ex_i == rd_addr_wb_i) & (r2_addr_ex_i != 0)) begin
+    end else if (rf_rw_wb_i && (r2_addr_ex_i == rd_addr_wb_i) && (r2_addr_ex_i != 0)) begin
       fwd_b_ex_o = 2'b01;
     end else begin
       fwd_b_ex_o = 2'b00;
     end
 
-    fwd_a_de_o = rf_rw_wb_i & (r1_addr_de_i == rd_addr_wb_i) & (r1_addr_de_i != 0);
-    fwd_b_de_o = rf_rw_wb_i & (r2_addr_de_i == rd_addr_wb_i) & (r2_addr_de_i != 0);
+    fwd_a_de_o = rf_rw_wb_i && (r1_addr_de_i == rd_addr_wb_i) && (r1_addr_de_i != 0);
+    fwd_b_de_o = rf_rw_wb_i && (r2_addr_de_i == rd_addr_wb_i) && (r2_addr_de_i != 0);
 
-    lw_stall   = rslt_sel_ex_0 & ((r1_addr_de_i == rd_addr_ex_i) | (r2_addr_de_i == rd_addr_ex_i));
+    lw_stall   = rslt_sel_ex_0 && ((r1_addr_de_i == rd_addr_ex_i) || (r2_addr_de_i == rd_addr_ex_i));
     stall_fe_o = lw_stall;
     stall_de_o = lw_stall;
     flush_de_o = pc_sel_ex_i;
-    flush_ex_o = lw_stall | pc_sel_ex_i;
+    flush_ex_o = lw_stall || pc_sel_ex_i;
 
   end
 

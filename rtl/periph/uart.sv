@@ -77,7 +77,7 @@ module uart
       tx_en    <= 1'b0;
       rx_en    <= 1'b0;
       baud_div <= 16'b0;
-    end else if (stb_i & we_i & adr_i == '0) begin
+    end else if (stb_i && we_i && adr_i == '0) begin
       tx_en    <= byte_sel_i[0] ? dat_i[0] : tx_en;
       rx_en    <= byte_sel_i[0] ? dat_i[1] : rx_en;
       baud_div <= (&byte_sel_i[3:2]) ? dat_i[31:16] : baud_div;
@@ -96,7 +96,7 @@ module uart
       end
       2'b11: begin
         dat_o = {28'b0, rx_empty, rx_full, tx_empty, tx_full};
-        tx_we = stb_i && ~tx_full && we_i & byte_sel_i[0];
+        tx_we = stb_i && ~tx_full && we_i && byte_sel_i[0];
       end
     endcase
   end

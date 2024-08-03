@@ -47,7 +47,7 @@ module reg_file
   always_ff @(posedge clk_i) begin : register_write
     if (rst_i) begin
       registers <= '{default: 0};
-    end else if (rw_en_i == 1'b1 & waddr_i != 5'b0) begin
+    end else if (rw_en_i == 1'b1 && waddr_i != 5'b0) begin
       registers[waddr_i] <= wdata_i;
     end
   end

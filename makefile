@@ -9,10 +9,14 @@ DEFINE_MACROS = +define+
 TB_FILE = ./rtl/tb/tb_wrapper.v
 SV_SOURCES = 	./rtl/pkg/tcore_param.sv \
 				./rtl/core/* \
+				./rtl/core/branch_prediction/* \
+				./rtl/core/cache/* \
+				./rtl/core/mul_div/* \
+				./rtl/core/mul_div/wallace8x8/* \
+				./rtl/core/mul_div/wallace32x32/* \
+				./rtl/periph/* \
 				./rtl/ram/* \
-				./rtl/wrapper/*.v \
-
-
+				./rtl/wrapper/*.*v \
 
 # Top level module for simulation
 TOP_LEVEL = tb_wrapper

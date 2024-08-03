@@ -38,61 +38,93 @@ module cpu
     input  logic                 uart_rx_i
 );
 
-  logic                  stall_all;
-  ilowX_req_t            lx_ireq;
-  dlowX_res_t            lx_dres;
-  dlowX_req_t            lx_dreq;
-  mem_req_t              mem_req;
-  // ------- fetch logic ------
-  logic                  fe_stall;
-  ilowX_res_t            lx_ires;
-  logic                  fe_imiss_stall;
-  logic       [XLEN-1:0] fe_pc;
-  logic       [XLEN-1:0] fe_pc4;
-  logic       [XLEN-1:0] fe_pc2;
-  logic       [XLEN-1:0] fe_inst;
-  logic                  fe_is_comp;
-  // ------- decode logic ------
-  pipe1_t                pipe1;
-  ctrl_t                 de_ctrl;
-  logic                  de_enable;
-  logic                  de_stall;
-  logic                  de_flush;
-  logic                  de_flush_en;
-  logic       [XLEN-1:0] de_r1_data;
-  logic       [XLEN-1:0] de_r2_data;
-  logic                  de_fwd_a;
-  logic                  de_fwd_b;
-  logic       [XLEN-1:0] de_imm;
-  // ------ execute logic ------
-  pipe2_t                pipe2;
-  logic                  ex_flush;
-  logic                  ex_flush_en;
-  logic       [     1:0] ex_fwd_a;
-  logic       [     1:0] ex_fwd_b;
-  logic       [XLEN-1:0] ex_alu_result;
-  logic       [XLEN-1:0] ex_pc_target;
-  logic       [XLEN-1:0] ex_wdata;
-  logic                  ex_pc_sel;
-  logic                  ex_alu_stall;
-  // ------- memory logic ------
-  pipe3_t                pipe3;
-  logic                  me_dmiss_stall;
-  logic       [XLEN-1:0] me_rdata;
-  // ------ writeback logic ----
-  pipe4_t                pipe4;
-  logic                  wb_rf_rw;
-  logic       [XLEN-1:0] wb_data;
+  logic          ex_spec_hit;
+  predict_info_t fe_spec;
+  predict_info_t de_spec;
+  predict_info_t ex_spec;
+  typedef struct packed {
+    logic [31:0] fe_inst;
+    logic [31:0] de_inst;
+    logic [31:0] ex_inst;
+    logic [31:0] me_inst;
+    logic [31:0] wb_inst;
+  } instr_pipe_t;
+  instr_pipe_t            pipe;
 
+
+
+  logic                   stall_all;
+  ilowX_req_t             lx_ireq;
+  dlowX_res_t             lx_dres;
+  dlowX_req_t             lx_dreq;
+  mem_req_t               mem_req;
+  // ------- fetch logic ------
+  logic                   fe_stall;
+  ilowX_res_t             lx_ires;
+  logic                   fe_imiss_stall;
+  logic        [XLEN-1:0] fe_pc;
+  logic        [XLEN-1:0] fe_pc4;
+  logic        [XLEN-1:0] fe_pc2;
+  logic        [XLEN-1:0] fe_inst;
+  logic                   fe_is_comp;
+  // ------- decode logic ------
+  pipe1_t                 pipe1;
+  ctrl_t                  de_ctrl;
+  logic                   de_enable;
+  logic                   de_stall;
+  logic                   de_flush;
+  logic                   de_flush_en;
+  logic        [XLEN-1:0] de_r1_data;
+  logic        [XLEN-1:0] de_r2_data;
+  logic                   de_fwd_a;
+  logic                   de_fwd_b;
+  logic        [XLEN-1:0] de_imm;
+  // ------ execute logic ------
+  pipe2_t                 pipe2;
+  logic                   ex_flush;
+  logic                   ex_flush_en;
+  logic        [     1:0] ex_fwd_a;
+  logic        [     1:0] ex_fwd_b;
+  logic        [XLEN-1:0] ex_alu_result;
+  logic        [XLEN-1:0] ex_pc_target;
+  logic        [XLEN-1:0] ex_pc_target_last;
+  logic        [XLEN-1:0] ex_wdata;
+  logic                   ex_pc_sel;
+  logic                   ex_alu_stall;
+  logic                   jalr_or_false_predict;
+  // ------- memory logic ------
+  pipe3_t                 pipe3;
+  logic                   me_dmiss_stall;
+  logic        [XLEN-1:0] me_rdata;
+  // ------ writeback logic ----
+  pipe4_t                 pipe4;
+  logic                   wb_rf_rw;
+  logic        [XLEN-1:0] wb_data;
+
+  assign pipe.fe_inst = fe_inst;
+  always_ff @(posedge clk_i) begin
+    if (rst_ni) begin
+      pipe.de_inst <= '0;
+      pipe.ex_inst <= '0;
+      pipe.me_inst <= '0;
+      pipe.wb_inst <= '0;
+    end else if (!stall_all) begin
+      pipe.de_inst <= fe_inst;
+      pipe.ex_inst <= pipe.de_inst;
+      pipe.me_inst <= pipe.ex_inst;
+      pipe.wb_inst <= pipe.me_inst;
+    end
+  end
   //----------------------------------              fetch             ---------------------------------------------
   stage1_fetch fetch (
       .clk_i        (clk_i),
       .rst_ni       (rst_ni),
       .stall_i      (stall_all),
       .fe_stall_i   (fe_stall),
-      .pc_sel_i     (ex_pc_sel),
       .lx_ires_i    (lx_ires),
-      .pc_target_i  (ex_pc_target),
+      .pc_target_i  (ex_pc_target_last),
+      .spec_hit_i   (ex_spec_hit),
+      .spec_o       (fe_spec),
       .lx_ireq_o    (lx_ireq),
       .pc_o         (fe_pc),
       .pc2_o        (fe_pc2),
@@ -105,9 +137,11 @@ module cpu
   //----------------------------------              decode             ---------------------------------------------
   always_ff @(posedge clk_i) begin
     if (rst_ni || de_flush_en) begin
-      pipe1 <= '{default: 0};
+      pipe1   <= '{default: 0};
+      de_spec <= '0;
     end else if (de_enable) begin
-      pipe1 <= '{pc      : fe_pc, pc4     : fe_pc4, pc2     : fe_pc2, inst    : fe_inst, is_comp : fe_is_comp};
+      pipe1   <= '{pc      : fe_pc, pc4     : fe_pc4, pc2     : fe_pc2, inst    : fe_inst, is_comp : fe_is_comp};
+      de_spec <= fe_spec;
     end
   end
 
@@ -134,8 +168,10 @@ module cpu
   //----------------------------------              execute             ---------------------------------------------
   always_ff @(posedge clk_i) begin
     if (rst_ni || ex_flush_en) begin
-      pipe2 <= '{default: 0};
+      pipe2   <= '{default: 0};
+      ex_spec <= '0;
     end else if (!stall_all) begin
+      ex_spec <= de_spec;
       pipe2 <= '{
           pc          : pipe1.pc,
           pc4         : pipe1.pc4,
@@ -185,6 +221,33 @@ module cpu
       .alu_stall_o  (ex_alu_stall)
   );
 
+
+  assign jalr_or_false_predict = pipe2.pc_sel[6] || !ex_spec_hit;
+
+  always_comb begin
+    if (!pipe2.pc_sel[6]) begin  // not jalr
+      if (ex_pc_sel) begin
+        ex_spec_hit = ex_spec.taken && (ex_pc_target == ex_spec.pc);
+      end else begin
+        ex_spec_hit = !ex_spec.taken;
+      end
+    end else begin
+      ex_spec_hit = '0;
+    end
+
+    if (pipe2.pc_sel[6]) begin
+      ex_pc_target_last = ex_pc_target;
+    end else if (!ex_spec_hit) begin
+      if (ex_pc_sel) begin
+        ex_pc_target_last = ex_pc_target;
+      end else begin
+        ex_pc_target_last = pipe2.is_comp ? pipe2.pc2 : pipe2.pc4;
+      end
+    end else begin
+      ex_pc_target_last = ex_pc_target;
+    end
+  end
+
   assign ex_flush_en = stall_all ? 1'b0 : ex_flush;
 
   //----------------------------------              memory             ---------------------------------------------
@@ -228,6 +291,7 @@ module cpu
   assign iomem_wdata = lx_dreq.data;
 
   //----------------------------------              write-back             ---------------------------------------------
+`ifndef REMOVE_WB_STAGE
   always_ff @(posedge clk_i) begin
     if (rst_ni) begin
       pipe4 <= '{default: 0};
@@ -244,6 +308,20 @@ module cpu
       };
     end
   end
+`else
+  always_comb begin
+    pipe4 = '{
+        pc4         : pipe3.pc4,
+        pc2         : pipe3.pc2,
+        is_comp     : pipe3.is_comp,
+        rf_rw_en    : pipe3.rf_rw_en,
+        result_src  : pipe3.result_src,
+        rd_addr     : pipe3.rd_addr,
+        alu_result  : pipe3.alu_result,
+        read_data   : me_rdata
+    };
+  end
+`endif
 
   stage5_writeback writeback (
       .data_sel_i  (pipe4.result_src),
@@ -265,7 +343,7 @@ module cpu
       .r1_addr_ex_i (pipe2.r1_addr),
       .r2_addr_ex_i (pipe2.r2_addr),
       .rd_addr_ex_i (pipe2.rd_addr),
-      .pc_sel_ex_i  (ex_pc_sel),
+      .pc_sel_ex_i  (jalr_or_false_predict),
       .rslt_sel_ex_0(pipe2.result_src[0]),
       .rd_addr_me_i (pipe3.rd_addr),
       .rf_rw_me_i   (pipe3.rf_rw_en),

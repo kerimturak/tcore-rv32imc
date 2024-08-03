@@ -14,7 +14,7 @@ TCORE is a simple core project based on the RISC-V architecture, supporting the 
 - [] Scripts to automate processes
 - [] Pass the official RISC-V International tests
 - [] Add formal verification
-- [] Add branch predictor
+- [X] Add branch predictor
 - [] Full custimazable
 - [] Machine mode csr support
 - [] Documentation page EN/TR
@@ -28,6 +28,6 @@ TCORE is a simple core project based on the RISC-V architecture, supporting the 
 | Core Configuration   | CoreMark/MHz |
 |---------------------|--------------|
 | RV32I               | 0.74         |
-| RV32IC              | 0.76         |
-| RV32IMC             | 1.10         |
+| RV32IC              | 0.62         |
+| RV32IMC             | 1.80         |
 

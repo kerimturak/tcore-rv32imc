@@ -14,33 +14,61 @@
 // Additional contributions by:                                               //
 //                 --                                                         //
 //                                                                            //
-// Design Name:    stage5_writeback                                           //
+// Design Name:    pma                                                        //
 // Project Name:   TCORE                                                      //
 // Language:       SystemVerilog                                              //
 //                                                                            //
-// Description:    stage5_writeback                                           //
+// Description:    Physical Memory Attributes                                 //
 ////////////////////////////////////////////////////////////////////////////////
 
 `timescale 1ns / 1ps
 `include "tcore_defines.svh"
-module stage5_writeback
+module pma
   import tcore_param::*;
 (
-    input  logic [     1:0] data_sel_i,
-    input  logic [XLEN-1:0] pc2_i,
-    input  logic [XLEN-1:0] pc4_i,
-    input  logic            is_comp_i,
-    input  logic [XLEN-1:0] alu_result_i,
-    input  logic [XLEN-1:0] read_data_i,
-    input  logic            stall_i,
-    input  logic            rf_rw_en_i,
-    output logic            rf_rw_en_o,
-    output logic [XLEN-1:0] wb_data_o
+    input logic [XLEN-1:0] addr_i,
+    output logic uncached_o,
+    output logic memregion_o
 );
 
+  typedef struct packed {
+    logic [XLEN-1:0] addr;
+    logic [XLEN-1:0] mask;
+    logic uncached;
+    logic memregion;
+  } pma_t;
+
+  logic [2:0] region_match;
+
+  localparam pma_t [2:0] pma_map = '{
+      '{addr : 32'h4000_0000, mask: 32'h000F_FFFF, uncached: 1'b0, memregion: 1'b1},  // Memregion
+      '{addr : 32'h2000_0000, mask: 32'h0000_000F, uncached: 1'b0, memregion: 1'b0},  // Uart
+      '{addr : 32'h3000_0000, mask: 32'h0000_0007, uncached: 1'b1, memregion: 1'b1}  // Timer
+  };
+
+  logic [XLEN-1:0] not_mask    [2:0];
+  logic [XLEN-1:0] not_mask_and[2:0];
+
+  for (genvar i = 0; i < 3; i++) begin
+    assign region_match[i] = pma_map[i].addr == (addr_i & ~pma_map[i].mask);
+    assign not_mask[i] = ~pma_map[i].mask;
+    assign not_mask_and[i] = addr_i & ~pma_map[i].mask;
+  end
+
   always_comb begin
-    rf_rw_en_o = rf_rw_en_i && !stall_i;
-    wb_data_o  = data_sel_i[1] ? (is_comp_i ? pc2_i : pc4_i) : (data_sel_i[0] ? read_data_i : alu_result_i);
+    memregion_o = '0;
+    uncached_o  = '0;
+    if (region_match[0]) begin
+      uncached_o  = pma_map[0].uncached;
+      memregion_o = pma_map[0].memregion;
+    end else if (region_match[1]) begin
+      uncached_o  = pma_map[1].uncached;
+      memregion_o = pma_map[1].memregion;
+    end else if (region_match[2]) begin
+      uncached_o  = pma_map[2].uncached;
+      memregion_o = pma_map[2].memregion;
+    end
+
   end
 
 endmodule

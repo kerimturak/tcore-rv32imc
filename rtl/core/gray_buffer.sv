@@ -109,10 +109,10 @@ module gray_align_buffer
     even.match = (even.rd_tag[TAG_SIZE-1:0] == even.wr_tag[TAG_SIZE-1:0]);
     odd.match = (odd.rd_tag[TAG_SIZE-1:0] == odd.wr_tag[TAG_SIZE-1:0]);
 
-    even.miss = cpu_valid_q & !(even.valid & even.match);
-    even.hit = cpu_valid_q & (even.valid & even.match);
-    odd.miss = cpu_valid_q & !(odd.valid & odd.match);
-    odd.hit = cpu_valid_q & (odd.valid & odd.match);
+    even.miss = cpu_valid_q && !(even.valid && even.match);
+    even.hit = cpu_valid_q && (even.valid && even.match);
+    odd.miss = cpu_valid_q && !(odd.valid && odd.match);
+    odd.hit = cpu_valid_q && (odd.valid && odd.match);
 
     miss_state = {odd.miss, even.miss};
     hit_state = {odd.hit, even.hit};
@@ -121,15 +121,15 @@ module gray_align_buffer
     wr_idx = odd.miss ? odd.rd_idx : even.rd_idx;
 
     //! not odd_miss or or not unalign so write even
-    even.tag_wr_en = lowX_res_i.valid & !buff_req_i.uncached & !odd.miss & even.miss;
+    even.tag_wr_en = lowX_res_i.valid && !buff_req_i.uncached && !odd.miss && even.miss;
     // odd misses have priority
-    odd.tag_wr_en = lowX_res_i.valid & !buff_req_i.uncached & odd.miss;
-    tag_wr_en = lowX_res_i.valid & !buff_req_i.uncached & (odd.miss | (!odd.miss & even.miss));
+    odd.tag_wr_en = lowX_res_i.valid && !buff_req_i.uncached && odd.miss;
+    tag_wr_en = lowX_res_i.valid && !buff_req_i.uncached && (odd.miss || (!odd.miss && even.miss));
 
     even.data_wr_idx = odd.tag_wr_en ? odd.rd_idx : even.rd_idx;
-    odd.data_wr_idx = even.tag_wr_en & !odd.tag_wr_en ? even.rd_idx : odd.rd_idx;
+    odd.data_wr_idx = even.tag_wr_en && !odd.tag_wr_en ? even.rd_idx : odd.rd_idx;
 
-    data_wr_en = even.tag_wr_en | odd.tag_wr_en;
+    data_wr_en = even.tag_wr_en || odd.tag_wr_en;
   end
 
   for (genvar i = 0; i < BLK_SIZE / 32; i++) begin
@@ -168,10 +168,10 @@ module gray_align_buffer
   end
 
   always_comb begin : EVEN_ODD_COMBINE
-    if (!buff_req_i.addr[1] & |miss_state & lowX_res_i.valid) begin
+    if (!buff_req_i.addr[1] && |miss_state && lowX_res_i.valid) begin
       // two parcell miss and not unalign
       buff_res_o.blk = lowX_res_i.blk[(word_sel+1)*32-:16];
-    end else if (buff_req_i.addr[1] & |miss_state & lowX_res_i.valid) begin
+    end else if (buff_req_i.addr[1] && |miss_state && lowX_res_i.valid) begin
       // unalign
       case (miss_state)
         2'b00: buff_res_o.blk = {even.parcel, odd.parcel};  // never
@@ -179,7 +179,7 @@ module gray_align_buffer
         2'b10: buff_res_o.blk = {even.parcel, odd.deviceX_parcel};
         2'b11: buff_res_o.blk = '0;
       endcase
-    end else if (!buff_req_i.addr[1] & &hit_state) begin
+    end else if (!buff_req_i.addr[1] && &hit_state) begin
       buff_res_o.blk = {odd.parcel, even.parcel};
     end else begin
       buff_res_o.blk = {even.parcel, odd.parcel};
@@ -187,10 +187,10 @@ module gray_align_buffer
   end
 
   always_comb begin
-    buff_res_o.valid = buff_req_i.ready & (&hit_state | (((|miss_state & !buff_req_i.addr[1]) | (!(&miss_state) & buff_req_i.addr[1])) & lowX_res_i.valid));
-    buff_res_o.ready = ((!even.miss & !odd.miss) | (lowX_res_i.valid & !(&miss_state)));
+    buff_res_o.valid = buff_req_i.ready && (&hit_state || (((|miss_state && !buff_req_i.addr[1]) || (!(&miss_state) && buff_req_i.addr[1])) && lowX_res_i.valid));
+    buff_res_o.ready = ((!even.miss && !odd.miss) || (lowX_res_i.valid && !(&miss_state)));
     buffer_miss_o = |miss_state;
-    lowX_req_o.valid = (|miss_state & !buff_req_i.uncached);
+    lowX_req_o.valid = (|miss_state && !buff_req_i.uncached);
     lowX_req_o.ready = 1'b1;
     lowX_req_o.uncached = buff_req_i.uncached;
 

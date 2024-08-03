@@ -127,10 +127,10 @@ module icache #(
       flush_index <= '0;
       flush       <= '1;
     end else begin
-      cpu_valid_q <= cache_req_i.valid & !cache_res_o.valid;
+      cpu_valid_q <= cache_req_i.valid && !cache_res_o.valid;
       addr_q <= cache_req_i.addr;
       uncached_q <= cache_req_i.uncached;
-      if (flush & flush_index != 2 ** IDX_WIDTH - 1) begin
+      if (flush && flush_index != 2 ** IDX_WIDTH - 1) begin
         flush_index <= flush_index + 1'b1;
       end else begin
         flush_index <= 1'b0;
@@ -156,18 +156,18 @@ module icache #(
     rd_idx    = cache_req_i.addr[IDX_WIDTH + BOFFSET-1:BOFFSET];
     wr_idx    = flush ? flush_index : addr_q[IDX_WIDTH + BOFFSET-1:BOFFSET];
 
-    cache_miss = cpu_valid_q & !flush & !(|(cache_valid_vec & cache_hit_vec));
-    cache_hit  = cpu_valid_q & !flush &  (|(cache_valid_vec & cache_hit_vec));
+    cache_miss = cpu_valid_q && !flush && !(|(cache_valid_vec & cache_hit_vec));
+    cache_hit  = cpu_valid_q && !flush &&  (|(cache_valid_vec & cache_hit_vec));
 
-    cache_wr_en = cache_miss & lowX_res_i.valid & !uncached_q | flush;
+    cache_wr_en = cache_miss && lowX_res_i.valid && !uncached_q || flush;
     cache_idx = cache_wr_en ? wr_idx : rd_idx;
 
-    node_wr_en = cache_wr_en | cache_hit ;
+    node_wr_en = cache_wr_en || cache_hit ;
 
     tag_write_way  = '0;
     data_write_way = '0;
-    for (int i = 0; i < NUM_WAY; i++) tag_write_way[i] = flush ? '1 : evict_way[i] & cache_wr_en;
-    for (int i = 0; i < NUM_WAY; i++) data_write_way[i] = evict_way[i] & cache_wr_en;
+    for (int i = 0; i < NUM_WAY; i++) tag_write_way[i] = flush ? '1 : evict_way[i] && cache_wr_en;
+    for (int i = 0; i < NUM_WAY; i++) data_write_way[i] = evict_way[i] && cache_wr_en;
   end
 
   always_comb begin
@@ -176,9 +176,9 @@ module icache #(
     lowX_req_o.addr     = addr_q;
     lowX_req_o.uncached = uncached_q;
     icache_miss_o       = cache_miss;
-    cache_res_o.valid   = cache_req_i.ready & (cache_hit | (cache_miss & lowX_req_o.ready & lowX_res_i.valid));
-    cache_res_o.ready   = (!cache_miss | lowX_res_i.valid) & !flush;
-    cache_res_o.blk     = (cache_miss & lowX_res_i.valid) ? lowX_res_i.blk : cache_select_data;
+    cache_res_o.valid   = cache_req_i.ready && (cache_hit || (cache_miss && lowX_req_o.ready && lowX_res_i.valid));
+    cache_res_o.ready   = (!cache_miss || lowX_res_i.valid) && !flush;
+    cache_res_o.blk     = (cache_miss && lowX_res_i.valid) ? lowX_res_i.blk : cache_select_data;
   end
 
 endmodule

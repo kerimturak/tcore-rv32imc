@@ -41,6 +41,11 @@ add wave -position insertpoint -radix hexadecimal  -group "WRAPPER" -group "SOC"
 add wave -position insertpoint -radix hexadecimal  -group "WRAPPER" -group "SOC"  -group "MEMORY4" -group internal sim:/tb_wrapper/teknofest_wrapper/soc/memory/*
 add wave -position insertpoint -radix hexadecimal  -group "WRAPPER" -group "SOC"  -group "WRITEBACK5" -group internal sim:/tb_wrapper/teknofest_wrapper/soc/writeback/*
 
+################## BRANCH PREDICTION ##################
+add wave -position insertpoint -radix hexadecimal        -group "WRAPPER" -group "SOC"  -group "FETCH1" -group "BRANCH PREDICTION"       sim:/tb_wrapper/teknofest_wrapper/soc/fetch/branch_prediction/*
+add wave -position insertpoint -radix hexadecimal        -group "WRAPPER" -group "SOC"  -group "FETCH1" -group "IPMA"                    sim:/tb_wrapper/teknofest_wrapper/soc/fetch/ipma/*
+
+
 ################## ALIGN BUFFER ##################
 add wave -position insertpoint -radix hexadecimal -in       -group "WRAPPER" -group "SOC"  -group "FETCH1" -group "ALIGN BUFFER" -group in       sim:/tb_wrapper/teknofest_wrapper/soc/fetch/gray_align_buffer/*
 add wave -position insertpoint -radix hexadecimal -out      -group "WRAPPER" -group "SOC"  -group "FETCH1" -group "ALIGN BUFFER" -group out      sim:/tb_wrapper/teknofest_wrapper/soc/fetch/gray_align_buffer/*
@@ -78,6 +83,7 @@ add wave -position insertpoint -radix hexadecimal -internal -group "WRAPPER" -gr
 add wave -position insertpoint -radix hexadecimal -in       -group "WRAPPER" -group "SOC"  -group "MEMORY4" -group "DCACHE" -group in       sim:/tb_wrapper/teknofest_wrapper/soc/memory/dcache/*
 add wave -position insertpoint -radix hexadecimal -out      -group "WRAPPER" -group "SOC"  -group "MEMORY4" -group "DCACHE" -group out      sim:/tb_wrapper/teknofest_wrapper/soc/memory/dcache/*
 add wave -position insertpoint -radix hexadecimal -internal -group "WRAPPER" -group "SOC"  -group "MEMORY4" -group "DCACHE" -group internal sim:/tb_wrapper/teknofest_wrapper/soc/memory/dcache/*
+#add wave -position insertpoint -radix hexadecimal           -group "WRAPPER" -group "SOC"  -group "MEMORY4" -group "DPMA"                   sim:/tb_wrapper/teknofest_wrapper/soc/memory/dpma/*
 
 ################## UART ##################
 add wave -position insertpoint -radix hexadecimal  -group "WRAPPER" -group "SOC"  -group "MEMORY4" -group "UART"   sim:/tb_wrapper/teknofest_wrapper/soc/memory/uart_inst/*
@@ -95,5 +101,5 @@ add wave -position insertpoint -radix hexadecimal -out      -group "WRAPPER" -gr
 add wave -position insertpoint -radix hexadecimal -internal -group "WRAPPER" -group "SOC"  -group "HAZARD" -group internal sim:/tb_wrapper/teknofest_wrapper/soc/hazard_unit/*
 
 
-run 70000ns
+run 10000ns
 wave zoom full

@@ -46,10 +46,10 @@ module memory_arbiter (
   round_e round;
 
   always_comb begin
-    icache_res_o.valid = round == ICACHE & mem_ready_i;
+    icache_res_o.valid = round == ICACHE && mem_ready_i;
     icache_res_o.ready = 1'b1;
     icache_res_o.blk = iomem_rdata_i;
-    dcache_res_o.valid = round == DCACHE & mem_ready_i;
+    dcache_res_o.valid = round == DCACHE && mem_ready_i;
     dcache_res_o.ready = 1'b1;
     dcache_res_o.data = iomem_rdata_i;
 
@@ -57,7 +57,7 @@ module memory_arbiter (
     mem_req_o.valid = round == DCACHE ? dcache_req_i.valid : icache_req_i.valid;
 
     mem_req_o.rw = '0;
-    if (round == DCACHE & dcache_req_i.rw & !dcache_req_i.uncached) begin
+    if (round == DCACHE && dcache_req_i.rw && !dcache_req_i.uncached) begin
       case (dcache_req_i.rw_type)
         0:       mem_req_o.rw = '0;
         1:       mem_req_o.rw = 'b1 << dcache_req_i.addr[BOFFSET-1:0];

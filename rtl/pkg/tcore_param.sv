@@ -196,4 +196,8 @@ package tcore_param;
     logic [15:0]     rw;
   } mem_req_t;
 
+typedef struct packed {
+    logic            taken;
+    logic [XLEN-1:0] pc;
+} predict_info_t;
 endpackage

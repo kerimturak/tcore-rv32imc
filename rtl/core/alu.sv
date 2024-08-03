@@ -94,25 +94,121 @@ module alu
     abs_B = alu_b_i[XLEN-1] ? ~alu_b_i + 1'b1 : alu_b_i;
     sign = alu_a_i[XLEN-1] ^ alu_b_i[XLEN-1];
     mul_type = op_sel_i inside {[10 : 13]};
-    mul_start = mul_type & !mul_busy & !alu_stall_q;
+    mul_start = mul_type && !mul_busy && !alu_stall_q;
     mul_op_A = op_sel_i == 13 ? $unsigned(alu_a_i) : abs_A;
-    mul_op_B = op_sel_i == 13 | op_sel_i == 12 ? $unsigned(alu_b_i) : abs_B;
+    mul_op_B = op_sel_i == 13 || op_sel_i == 12 ? $unsigned(alu_b_i) : abs_B;
     product = sign ? ~(unsigned_prod - 1'b1) : unsigned_prod;
-    mul_stall = (mul_type & !mul_valid | (mul_valid & mul_start));
+    mul_stall = (mul_type && !mul_valid || (mul_valid && mul_start));
     div_type = op_sel_i inside {[14 : 17]};
-    div_start = div_type & !div_busy & !alu_stall_q;
-    div_op_A = op_sel_i == 15 | op_sel_i == 17 ? $unsigned(alu_a_i) : abs_A;
-    div_op_B = op_sel_i == 15 | op_sel_i == 17 ? $unsigned(alu_b_i) : abs_B;
+    div_start = div_type && !div_busy && !alu_stall_q;
+    div_op_A = op_sel_i == 15 || op_sel_i == 17 ? $unsigned(alu_a_i) : abs_A;
+    div_op_B = op_sel_i == 15 || op_sel_i == 17 ? $unsigned(alu_b_i) : abs_B;
     quotient = sign ? ~(unsigned_quo - 1'b1) : unsigned_quo;
     reminder = sign ? ~(unsigned_rem - 1'b1) : unsigned_rem;
-    div_stall = (div_type & !div_valid | (div_valid & div_start));
-    alu_stall_o = mul_stall | div_stall;
+    div_stall = (div_type && !div_valid || (div_valid && div_start));
+    alu_stall_o = mul_stall || div_stall;
   end
 
   always_ff @(posedge clk_i) begin
     if (rst_i) alu_stall_q <= 0;
     else alu_stall_q <= alu_stall_o;
   end
+
+`ifdef WALLACE_SINGLE_CYCLE
+
+  assign mul_valid = 1;
+  assign mul_busy  = 0;
+  mul #(
+      .XLEN(32),
+      .YLEN(32),
+      .TYP (1)
+  ) u_mul (
+      .a(mul_op_A),
+      .b(mul_op_B),
+      .c(unsigned_prod)
+  );
+
+`elsif DSP_MUL
+
+  always_comb begin
+    unsigned_prod = mul_op_A * mul_op_B;
+    mul_valid = 1;
+    mul_busy = 0;
+  end
+
+`elsif WALLACE_MULTY_CYCLE
+
+  typedef enum logic [2:0] {
+    IDLE,
+    CALC_1,
+    CALC_2,
+    CALC_3,
+    CALC_4
+  } state_t;
+  state_t state, next_state;
+
+  logic [15:0] products[3:0];
+  logic [ 7:0] mul_A;
+
+  for (genvar i = 0; i < 4; i++) begin : generate_multipliers
+    wallace_8x8_product wtm (
+        .a(mul_A),
+        .b(abs_B[(i+1)*8-1-:8]),
+        .z(products[i])
+    );
+  end
+
+  assign mul_busy = state != IDLE;
+
+  always_ff @(posedge clk_i) begin
+    if (rst_i) begin
+      state <= IDLE;
+      unsigned_prod <= 64'd0;
+      mul_valid <= 1'b0;
+    end else begin
+      state <= next_state;
+      if (state == IDLE) begin
+        unsigned_prod <= 64'd0;
+        mul_valid <= 1'b0;
+      end else if (state inside {CALC_1, CALC_2, CALC_3, CALC_4}) begin
+        unsigned_prod <= unsigned_prod + (products[0] << (0 +  (state - 1) * 8)) +
+                                         (products[1] << (8 +  (state - 1) * 8)) +
+                                         (products[2] << (16 + (state - 1) * 8)) +
+                                         (products[3] << (24 + (state - 1) * 8));
+        mul_valid <= state == CALC_4 ? 1'b1 : 1'b0;
+      end
+    end
+  end
+
+  always_comb begin
+    next_state = state;
+    case (state)
+      IDLE: begin
+        mul_A = '0;
+        if (mul_start) begin
+          next_state = CALC_1;
+        end
+      end
+      CALC_1: begin
+        mul_A = abs_A[7:0];
+        next_state = CALC_2;
+      end
+      CALC_2: begin
+        mul_A = abs_A[15:8];
+        next_state = CALC_3;
+      end
+      CALC_3: begin
+        mul_A = abs_A[23:16];
+        next_state = CALC_4;
+      end
+      CALC_4: begin
+        mul_A = abs_A[31:24];
+        next_state = IDLE;
+      end
+    endcase
+  end
+
+`else
 
   seq_multiplier #(
       .SIZE(32)
@@ -127,6 +223,8 @@ module alu
       .multiplier_i  (mul_op_B),
       .product_o     (unsigned_prod)
   );
+
+`endif
 
   divu_int #(
       .WIDTH(32)
