@@ -43,11 +43,63 @@ package tcore_param;
   localparam UART_OVER_SAMPL = 16;
   localparam UART_CNTR = $clog2(UART_OVER_SAMPL);
 
-  localparam IC_WAY = 4;
-  localparam DC_WAY = 4;
-  localparam IC_CAPACITY = 2 * (2 ** 10) * 8;
-  localparam DC_CAPACITY = 2 * (2 ** 10) * 8;
-  localparam BUFFER_CAPACITY = 2 * BLK_SIZE;
+  localparam IC_WAY = 8;
+  localparam DC_WAY = 8;
+  localparam IC_CAPACITY = 8 * (2 ** 10) * 8;
+  localparam DC_CAPACITY = 8 * (2 ** 10) * 8;
+  localparam BUFFER_CAPACITY = 8 * BLK_SIZE;
+
+  localparam Mul_Type = 0;  // 1: dadda 0: wallace
+  typedef enum logic [3:0] {
+    NO_BJ,
+    BEQ,
+    BNE,
+    BLT,
+    BGE,
+    BLTU,
+    BGEU,
+    JALR,
+    JAL
+  } pc_sel_e;
+
+  typedef enum logic [1:0] {
+    NO_SIZE,
+    BYTE,
+    HALF_WORD,
+    WORD
+  } size_e;
+
+  typedef enum logic [2:0] {
+    NO_IMM,
+    I_IMM,
+    I_USIMM,
+    S_IMM,
+    B_IMM,
+    U_IMM,
+    J_IMM
+  } imm_e;
+
+  typedef enum logic [4:0] {
+    OP_ADD,
+    OP_SUB,
+    OP_SLL,
+    OP_SLT,
+    OP_SLTU,
+    OP_XOR,
+    OP_SRL,
+    OP_SRA,
+    OP_OR,
+    OP_AND,
+    OP_MUL,
+    OP_MULH,
+    OP_MULHSU,
+    OP_MULHU,
+    OP_DIV,
+    OP_DIVU,
+    OP_REM,
+    OP_REMU,
+    OP_LUI
+  } alu_op_e;
 
   typedef struct packed {
     logic [6:0] funct7;
@@ -73,13 +125,13 @@ package tcore_param;
     logic            is_comp;
     logic            rf_rw_en;
     logic            wr_en;
-    logic [1:0]      rw_type;
+    size_e           rw_size;
     logic [1:0]      result_src;
-    logic [4:0]      alu_ctrl;
-    logic [7:0]      pc_sel;
+    alu_op_e         alu_ctrl;
+    pc_sel_e         pc_sel;
     logic [1:0]      alu_in1_sel;
     logic            alu_in2_sel;
-    logic [4:0]      ld_op_size;
+    logic            ld_op_sign;
     logic [XLEN-1:0] r1_data;
     logic [XLEN-1:0] r2_data;
     logic [4:0]      r1_addr;
@@ -94,9 +146,9 @@ package tcore_param;
     logic            is_comp;
     logic            rf_rw_en;
     logic            wr_en;
-    logic [1:0]      rw_type;
+    size_e           rw_size;
     logic [1:0]      result_src;
-    logic [4:0]      ld_op_size;
+    logic            ld_op_sign;
     logic [4:0]      rd_addr;
     logic [XLEN-1:0] alu_result;
     logic [XLEN-1:0] write_data;
@@ -115,15 +167,15 @@ package tcore_param;
 
   typedef struct packed {
     logic       rf_rw_en;
-    logic [2:0] imm_sel;
+    imm_e       imm_sel;
     logic       wr_en;
-    logic [1:0] rw_type;
+    size_e      rw_size;
     logic [1:0] result_src;
-    logic [4:0] alu_ctrl;
-    logic [7:0] pc_sel;
+    alu_op_e    alu_ctrl;
+    pc_sel_e    pc_sel;
     logic [1:0] alu_in1_sel;
     logic       alu_in2_sel;
-    logic [4:0] ld_op_size;
+    logic       ld_op_sign;
   } ctrl_t;
 
   typedef struct packed {
@@ -164,7 +216,7 @@ package tcore_param;
     logic [XLEN-1:0] addr;
     logic            uncached;
     logic            rw;
-    logic [1:0]      rw_type;
+    size_e           rw_size;
     logic [31:0]     data;
   } dcache_req_t;
 
@@ -184,20 +236,21 @@ package tcore_param;
     logic                valid;
     logic                ready;
     logic [XLEN-1:0]     addr;
-    logic [1:0]          rw_type;
+    size_e               rw_size;
     logic                rw;
     logic [BLK_SIZE-1:0] data;
     logic                uncached;
   } dlowX_req_t;
 
   typedef struct packed {
-    logic            valid;
-    logic [XLEN-1:0] addr;
-    logic [15:0]     rw;
+    logic                valid;
+    logic [XLEN-1:0]     addr;
+    logic [BLK_SIZE-1:0] data;
+    logic [15:0]         rw;
   } mem_req_t;
 
-typedef struct packed {
+  typedef struct packed {
     logic            taken;
     logic [XLEN-1:0] pc;
-} predict_info_t;
+  } predict_info_t;
 endpackage

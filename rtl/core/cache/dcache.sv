@@ -45,47 +45,46 @@ module dcache
   localparam BOFFSET = $clog2(BLK_SIZE / 8);
   localparam WOFFSET = $clog2((BLK_SIZE / 32));
   localparam TAG_SIZE = XLEN - IDX_WIDTH - BOFFSET;
-  localparam WORD = 2'b11, HALF = 2'b10, BYTE = 2'b01, NONE = 2'b00;
 
-  logic                 uncached_q;
-  logic                 rw_q;
-  logic [          1:0] rw_type_q;
-  logic                 cache_miss;
-  logic                 cache_hit;
-  logic [IDX_WIDTH-1:0] pc_idx;
-  logic [     XLEN-1:0] addr_q;
-  logic [         31:0] wdata_q;
-  logic [  NUM_WAY-1:0] cache_wr_way;
-  logic [ BLK_SIZE-1:0] cache_select_data;
-  logic [ BLK_SIZE-1:0] mask_data;
-  logic                 data_array_wr_en;
-  logic [ BLK_SIZE-1:0] data_wr_pre;
-  logic [ BLK_SIZE-1:0] data_wr_line;
-  logic [ BLK_SIZE-1:0] data_rd_line      [NUM_WAY];
-  logic [  NUM_WAY-1:0] data_write_way;
-  logic                 tag_array_wr_en;
-  logic [   TAG_SIZE:0] cache_wr_tag;
-  logic [   TAG_SIZE:0] cache_rd_tag      [NUM_WAY];
-  logic [  NUM_WAY-1:0] evict_way;
-  logic [  NUM_WAY-1:0] cache_valid_vec;
-  logic [  NUM_WAY-1:0] cache_hit_vec;
-  logic                 flush;
-  logic [IDX_WIDTH-1:0] flush_index;
-  logic [IDX_WIDTH-1:0] cache_idx;
-  logic [  NUM_WAY-1:0] tag_write_way;
-  logic                 node_wr_en;
-  logic [  NUM_WAY-2:0] updated_node;
-  logic [  NUM_WAY-2:0] cache_wr_node;
-  logic [  NUM_WAY-2:0] cache_rd_node;
-  logic                 cpu_valid_q;
-  logic [  WOFFSET-1:0] word_idx;
-  logic                 write_back;
-  logic                 dirty_wr_en;
-  logic [  NUM_WAY-1:0] dirty_write_way;
-  logic                 dirty_wr_data;
-  logic [  NUM_WAY-1:0] dirty_rd_data;
-  logic [ TAG_SIZE-1:0] evict_tag;
-  logic [ BLK_SIZE-1:0] evict_data;
+  logic                  uncached_q;
+  logic                  rw_q;
+  size_e                 rw_size_q;
+  logic                  cache_miss;
+  logic                  cache_hit;
+  logic  [IDX_WIDTH-1:0] pc_idx;
+  logic  [     XLEN-1:0] addr_q;
+  logic  [         31:0] wdata_q;
+  logic  [  NUM_WAY-1:0] cache_wr_way;
+  logic  [ BLK_SIZE-1:0] cache_select_data;
+  logic  [ BLK_SIZE-1:0] mask_data;
+  logic                  data_array_wr_en;
+  logic  [ BLK_SIZE-1:0] data_wr_pre;
+  logic  [ BLK_SIZE-1:0] data_wr_line;
+  logic  [ BLK_SIZE-1:0] data_rd_line      [NUM_WAY];
+  logic  [  NUM_WAY-1:0] data_write_way;
+  logic                  tag_array_wr_en;
+  logic  [   TAG_SIZE:0] cache_wr_tag;
+  logic  [   TAG_SIZE:0] cache_rd_tag      [NUM_WAY];
+  logic  [  NUM_WAY-1:0] evict_way;
+  logic  [  NUM_WAY-1:0] cache_valid_vec;
+  logic  [  NUM_WAY-1:0] cache_hit_vec;
+  logic                  flush;
+  logic  [IDX_WIDTH-1:0] flush_index;
+  logic  [IDX_WIDTH-1:0] cache_idx;
+  logic  [  NUM_WAY-1:0] tag_write_way;
+  logic                  node_wr_en;
+  logic  [  NUM_WAY-2:0] updated_node;
+  logic  [  NUM_WAY-2:0] cache_wr_node;
+  logic  [  NUM_WAY-2:0] cache_rd_node;
+  logic                  cpu_valid_q;
+  logic  [  WOFFSET-1:0] word_idx;
+  logic                  write_back;
+  logic                  dirty_wr_en;
+  logic  [  NUM_WAY-1:0] dirty_write_way;
+  logic                  dirty_wr_data;
+  logic  [  NUM_WAY-1:0] dirty_rd_data;
+  logic  [ TAG_SIZE-1:0] evict_tag;
+  logic  [ BLK_SIZE-1:0] evict_data;
 
   always_ff @(posedge clk_i) begin
     if (rst_i) begin
@@ -93,7 +92,7 @@ module dcache
       wdata_q     <= '0;
       uncached_q  <= '0;
       rw_q        <= '0;
-      rw_type_q   <= '0;
+      rw_size_q   <= NO_SIZE;
       cpu_valid_q <= '0;
       flush_index <= '0;
       flush       <= '1;
@@ -103,7 +102,7 @@ module dcache
       cpu_valid_q <= cache_req_i.valid;
       uncached_q  <= cache_req_i.uncached;
       rw_q        <= cache_req_i.rw;
-      rw_type_q   <= cache_req_i.rw_type;
+      rw_size_q   <= cache_req_i.rw_size;
       if (flush && flush_index != 2 ** IDX_WIDTH - 1) begin
         flush_index <= flush_index + 1'b1;
       end else begin
@@ -178,11 +177,11 @@ module dcache
 
   always_comb begin
     data_wr_pre = mask_data;
-    case (rw_type_q)
-      WORD: data_wr_pre[cache_req_i.addr[BOFFSET-1:2]*32+:32] = wdata_q;
-      HALF: data_wr_pre[cache_req_i.addr[BOFFSET-1:1]*16+:16] = wdata_q;
-      BYTE: data_wr_pre[cache_req_i.addr[BOFFSET-1:0]*8+:8] = wdata_q;
-      NONE: data_wr_pre = '0;
+    case (rw_size_q)
+      WORD:      data_wr_pre[cache_req_i.addr[BOFFSET-1:2]*32+:32] = wdata_q;
+      HALF_WORD: data_wr_pre[cache_req_i.addr[BOFFSET-1:1]*16+:16] = wdata_q;
+      BYTE:      data_wr_pre[cache_req_i.addr[BOFFSET-1:0]*8+:8] = wdata_q;
+      NO_SIZE:   data_wr_pre = '0;
     endcase
   end
 
@@ -235,7 +234,7 @@ module dcache
     lowX_req_o.uncached = write_back ? '0 : uncached_q;
     lowX_req_o.addr = write_back ? {evict_tag, pc_idx, {BOFFSET{1'b0}}} : {addr_q[31:BOFFSET], {BOFFSET{1'b0}}};
     lowX_req_o.rw = write_back ? '1 : '0;
-    lowX_req_o.rw_type = write_back ? '1 : '0;
+    lowX_req_o.rw_size = write_back ? WORD : rw_size_q;
     lowX_req_o.data = write_back ? evict_data : '0;
 
     cache_res_o.valid = !rw_q ? !write_back && cpu_valid_q &&  (cache_hit || (cache_miss && lowX_req_o.ready && lowX_res_i.valid)) :

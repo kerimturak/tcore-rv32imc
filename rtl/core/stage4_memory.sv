@@ -30,11 +30,11 @@ module stage4_memory
     input  logic                  rst_ni,
     input  logic                  stall_i,
     input  logic                  wr_en_i,
-    input  logic       [     1:0] rw_type_i,
+    input  size_e                 rw_size_i,
     input  logic       [XLEN-1:0] alu_result_i,
     input  logic       [XLEN-1:0] write_data_i,
     input  dlowX_res_t            lx_dres_i,
-    input  logic       [     4:0] ld_op_size_i,
+    input  logic                  ld_op_sign_i,
     output dlowX_req_t            lx_dreq_o,
     output logic       [XLEN-1:0] me_data_o,
     output logic                  dmiss_stall_o,
@@ -56,11 +56,11 @@ module stage4_memory
   logic                   memregion;
 
   always_comb begin
-    dcache_req.valid = !dcache_res.valid && |rw_type_i && memregion;
+    dcache_req.valid = !dcache_res.valid && (rw_size_i != NO_SIZE) && memregion;
     dcache_req.addr = alu_result_i;
     dcache_req.ready = 1'b1;
     dcache_req.rw = wr_en_i;
-    dcache_req.rw_type = rw_type_i;
+    dcache_req.rw_size = rw_size_i;
     dcache_req.data = write_data_i;
     dcache_req.uncached = uncached;
     dmiss_stall_o = (dcache_req.valid && !dcache_res.valid);
@@ -69,7 +69,7 @@ module stage4_memory
   pma dpma (
       .addr_i     (alu_result_i),
       .uncached_o (uncached),
-      .memregion_o(memregion)            // unused now
+      .memregion_o(memregion)      // unused now
   );
 
   dcache dcache (
@@ -92,13 +92,11 @@ module stage4_memory
     selected_byte = rd_data[(dcache_req.addr[1:0]*8)+:8];
     selected_halfword = rd_data[(dcache_req.addr[1]*16)+:16];
     // Determine the output based on load operation sizef
-    unique case (1'b1)
-      ld_op_size_i[0]: me_data_o = {{24{selected_byte[7]}}, selected_byte};  // Byte with sign extension
-      ld_op_size_i[1]: me_data_o = {{16{selected_halfword[15]}}, selected_halfword};  // Halfword with sign extension
-      ld_op_size_i[2]: me_data_o = rd_data;  // Word
-      ld_op_size_i[3]: me_data_o = {24'b0, selected_byte};  // Byte without sign extension
-      ld_op_size_i[4]: me_data_o = {16'b0, selected_halfword};  // Halfword without sign extension
-      default:         me_data_o = '0;
+    unique case (rw_size_i)
+      BYTE:      me_data_o = ld_op_sign_i ? {{24{selected_byte[7]}}, selected_byte} : {24'b0, selected_byte};
+      HALF_WORD: me_data_o = ld_op_sign_i ? {{16{selected_halfword[15]}}, selected_halfword} : {16'b0, selected_halfword};
+      WORD:      me_data_o = rd_data;
+      default:   me_data_o = '0;
     endcase
   end
 

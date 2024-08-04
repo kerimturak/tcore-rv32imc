@@ -30,14 +30,14 @@ module teknofest_wrapper (
   // 50 MHz clocking wizard ip
   wire locked;
   wire clk_o;
-  //clk_wiz_0 dutclk (
-  //  .clk_out1 (clk_o    ),
-  //  .clk_in1  (clk_i    ),
-  //  .reset    (!rst_ni  ),
-  //  .locked   (locked   )
-  //);
+  clk_wiz_0 dutclk (
+    .clk_out1 (clk_o    ),
+    .clk_in1  (clk_i    ),
+    .reset    (!rst_ni  ),
+    .locked   (locked   )
+  );
 
-  assign clk_o = clk_i;
+  //assign clk_o = clk_i;
   localparam BLOCK_SIZE = 128;
   localparam NUMS_BYTE = BLOCK_SIZE / 8;
   localparam NUMS_WORD = BLOCK_SIZE / 32;

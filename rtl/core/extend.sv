@@ -26,20 +26,20 @@
 module extend
   import tcore_param::*;
 (
-    input  logic [XLEN-1:7] imm_i,  //! extracted immediate value from instruction
-    input  logic [     2:0] sel_i,  //! type of instruction
-    output logic [XLEN-1:0] imm_o   //! generated immediate value according to riscv unprivilege spec.
+    input logic [XLEN-1:7] imm_i,  //! extracted immediate value from instruction
+    input imm_e sel_i,  //! type of instruction
+    output logic [XLEN-1:0] imm_o  //! generated immediate value according to riscv unprivilege spec.
 );
 
   always_comb begin : immediate_generator
     case (sel_i)
-      0:       imm_o = {{20{imm_i[31]}}, imm_i[31:20]};  // i 12-bit signed immediate
-      1:       imm_o = {{20{imm_i[31]}}, imm_i[31:25], imm_i[11:7]};  // s 12-bit signed immediate
-      2:       imm_o = {{20{imm_i[31]}}, imm_i[7], imm_i[30:25], imm_i[11:8], 1'b0};  // b 13-bit signed immediate
-      3:       imm_o = {{12{imm_i[31]}}, imm_i[19:12], imm_i[20], imm_i[30:21], 1'b0};  // j 21-bit signed immediate
-      4:       imm_o = {{imm_i[31:12]}, 12'b0};  // u 20-bit signed immediate
-      5:       imm_o = {{20{1'b0}}, imm_i[31:20]};  // i 12-bit unsigned immediate
-      6:       imm_o = {27'b0, imm_i[24:20]};  // shift amount (shamt)
+      I_IMM:   imm_o = {{20{imm_i[31]}}, imm_i[31:20]};  // i 12-bit signed immediate
+      I_USIMM: imm_o = {{20{1'b0}}, imm_i[31:20]};  // i 12-bit unsigned immediate
+      S_IMM:   imm_o = {{20{imm_i[31]}}, imm_i[31:25], imm_i[11:7]};  // s 12-bit signed immediate
+      B_IMM:   imm_o = {{20{imm_i[31]}}, imm_i[7], imm_i[30:25], imm_i[11:8], 1'b0};  // b 13-bit signed immediate
+      J_IMM:   imm_o = {{12{imm_i[31]}}, imm_i[19:12], imm_i[20], imm_i[30:21], 1'b0};  // j 21-bit signed immediate
+      U_IMM:   imm_o = {{imm_i[31:12]}, 12'b0};  // u 20-bit signed immediate
+      //6:       imm_o = {27'b0, imm_i[24:20]};  // shift amount (shamt)
       default: imm_o = '0;
     endcase
   end

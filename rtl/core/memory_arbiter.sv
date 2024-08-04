@@ -57,12 +57,13 @@ module memory_arbiter (
     mem_req_o.valid = round == DCACHE ? dcache_req_i.valid : icache_req_i.valid;
 
     mem_req_o.rw = '0;
+    mem_req_o.data = dcache_req_i.data;
     if (round == DCACHE && dcache_req_i.rw && !dcache_req_i.uncached) begin
-      case (dcache_req_i.rw_type)
-        0:       mem_req_o.rw = '0;
-        1:       mem_req_o.rw = 'b1 << dcache_req_i.addr[BOFFSET-1:0];
-        2:       mem_req_o.rw = 'b11 << dcache_req_i.addr[BOFFSET-1:0];
-        default: mem_req_o.rw = '1;
+      case (dcache_req_i.rw_size)
+        NO_SIZE:   mem_req_o.rw = '0;
+        BYTE:      mem_req_o.rw = 'b1 << dcache_req_i.addr[BOFFSET-1:0];
+        HALF_WORD: mem_req_o.rw = 'b11 << dcache_req_i.addr[BOFFSET-1:0];
+        default:   mem_req_o.rw = '1;
       endcase
     end
   end

@@ -19,9 +19,10 @@ dhrystone_IC_2000000     = "./tests/hex_test/50MHz/RV32IC/dhrystone/iteration_20
 # RV32IC
 coremark_rv32imc_1    = "./tests/hex_test/50MHz/RV32IMC/coremark/iteration_1_test/coremark_baremetal_static.hex"
 coremark_rv32imc_1000 = "./tests/hex_test/50MHz/RV32IMC/coremark/iteration_1000/coremark_baremetal_static.hex"
+coremark_rv32imc_1100 = "./tests/hex_test/50MHz/RV32IMC/coremark/iteration_1100/coremark_baremetal_static.hex"
 dhrystone_IMC_8000000     = "./tests/hex_test/50MHz/RV32IMC/dhrystone/iteration_8000000/dhrystone_static.hex"
 
-file = coremark_rv32imc_1000
+file = test
 
 program_sequence = "TCORETEST"
 

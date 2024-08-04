@@ -25,9 +25,9 @@ TCORE is a simple core project based on the RISC-V architecture, supporting the 
 # Score
 1000 Iterations at 50 MHz
 
-| Core Configuration   | CoreMark/MHz |
-|---------------------|--------------|
-| RV32I               | 0.74         |
-| RV32IC              | 0.62         |
-| RV32IMC             | 1.80         |
+| Core Configuration   | CoreMark/MHz | Iteration |
+|--------------------- |--------------|--------------|
+| RV32I                | 0.82         | 1000         |
+| RV32IC               | 0.82         | 1000         |
+| RV32IMC              | 2.20         | 1100         |
 
