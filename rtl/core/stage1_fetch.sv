@@ -84,14 +84,18 @@ module stage1_fetch
   pma ipma (
       .addr_i     (pc_o),
       .uncached_o (uncached),
-      .memregion_o(memregion) // unused now
+      .memregion_o(memregion)  // unused now
   );
 
-  ibex_branch_predict branch_prediction (
+  t_branch_predict branch_prediction (
       .clk_i        (clk_i),
       .rst_ni       (rst_ni),
-      .fetch_rdata_i(buff_res.blk),
-      .fetch_pc_i   (pc_o),
+      .inst_i       (inst_o),
+      .stall_i      (stall_i),
+      .is_comp_i    (is_comp_o),
+      .pc_i         (pc_o),
+      .pc2_i        (pc2_o),
+      .pc4_i        (pc4_o),
       .fetch_valid_i(buff_res.valid),
       .spec_o       (spec_o)
   );

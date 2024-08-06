@@ -80,7 +80,6 @@ module cpu
   logic          [XLEN-1:0] ex_wdata;
   logic                     ex_pc_sel;
   logic                     ex_alu_stall;
-  logic                     jalr_or_false_predict;
   predict_info_t            ex_spec;
   logic                     ex_spec_hit;
   // ------- memory logic ------
@@ -198,28 +197,13 @@ module cpu
       .alu_stall_o  (ex_alu_stall)
   );
 
-
-  assign jalr_or_false_predict = (pipe2.pc_sel == JALR) || !ex_spec_hit;
-
   always_comb begin
-    if (pipe2.pc_sel != JALR) begin  // not jalr
-      if (ex_pc_sel) begin
-        ex_spec_hit = ex_spec.taken && (ex_pc_target == ex_spec.pc);
-      end else begin
-        ex_spec_hit = !ex_spec.taken;
-      end
-    end else begin
-      ex_spec_hit = '0;
-    end
+    if (ex_pc_sel) ex_spec_hit = ex_spec.taken && (ex_pc_target == ex_spec.pc);
+    else ex_spec_hit = !ex_spec.taken;
 
-    if ((pipe2.pc_sel == JALR)) begin
-      ex_pc_target_last = ex_pc_target;
-    end else if (!ex_spec_hit) begin
-      if (ex_pc_sel) begin
-        ex_pc_target_last = ex_pc_target;
-      end else begin
-        ex_pc_target_last = pipe2.is_comp ? pipe2.pc2 : pipe2.pc4;
-      end
+    if (!ex_spec_hit) begin
+      if (ex_pc_sel) ex_pc_target_last = ex_pc_target;
+      else ex_pc_target_last = pipe2.is_comp ? pipe2.pc2 : pipe2.pc4;
     end else begin
       ex_pc_target_last = ex_pc_target;
     end
@@ -318,7 +302,7 @@ module cpu
       .r1_addr_ex_i (pipe2.r1_addr),
       .r2_addr_ex_i (pipe2.r2_addr),
       .rd_addr_ex_i (pipe2.rd_addr),
-      .pc_sel_ex_i  (jalr_or_false_predict),
+      .pc_sel_ex_i  (!ex_spec_hit),
       .rslt_sel_ex_0(pipe2.result_src[0]),
       .rd_addr_me_i (pipe3.rd_addr),
       .rf_rw_me_i   (pipe3.rf_rw_en),
