@@ -24,10 +24,11 @@
 `timescale 1ns / 1ps
 `include "tcore_defines.svh"
 import tcore_param::*;
-
 module ras (
     input  logic        clk_i,
     input  logic        rst_ni,
+    input  logic        spec_hit_i,
+    input  logic        stall_i,
     input  logic        req_valid_i,
     input  logic        j_type_i,
     input  logic        jr_type_i,
@@ -37,7 +38,7 @@ module ras (
     output logic [31:0] popped_addr_o,
     output logic        predict_valid_o
 );
-  localparam RAS_SIZE = 16;
+  localparam RAS_SIZE = 8;
   typedef enum logic [1:0] {
     NONE,
     PUSH,
@@ -46,6 +47,8 @@ module ras (
   } ras_op_e;
 
   logic    [31:0] ras     [RAS_SIZE-1:0];
+  logic    [31:0] addr_q;
+  logic           valid_q;
   ras_op_e        ras_op;
   logic           link_rd;
   logic           link_r1;
@@ -69,16 +72,32 @@ module ras (
   always_ff @(posedge clk_i) begin
     if (rst_ni) begin
       ras <= '{default: 0};
-    end else if (req_valid_i) begin
-      case (ras_op)
-        PUSH: begin
+    end else begin
+      if (!stall_i) begin
+        if (!spec_hit_i && valid_q) begin
           for (int i = RAS_SIZE - 1; i > 0; i--) ras[i] <= ras[i-1];
-          ras[0] <= return_addr_i;
+          ras[0] <= addr_q;
+        end else if (req_valid_i) begin
+          case (ras_op)
+            PUSH: begin
+              for (int i = RAS_SIZE - 1; i > 0; i--) ras[i] <= ras[i-1];
+              ras[0] <= return_addr_i;
+            end
+            POP:  for (int i = 0; i < RAS_SIZE - 1; i++) ras[i] <= ras[i+1];
+            BOTH: ras[0] <= return_addr_i;
+          endcase
         end
-        POP:  for (int i = 0; i < RAS_SIZE - 1; i++) ras[i] <= ras[i+1];
-        BOTH: ras[0] <= return_addr_i;
-      endcase
+      end
     end
   end
 
+  always_ff @(posedge clk_i) begin
+    if (rst_ni) begin
+      addr_q  <= '0;
+      valid_q <= '0;
+    end else if (!stall_i) begin
+      addr_q  <= popped_addr_o;
+      valid_q <= predict_valid_o;
+    end
+  end
 endmodule

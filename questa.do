@@ -42,8 +42,21 @@ add wave -position insertpoint -radix hexadecimal  -group "WRAPPER" -group "SOC"
 add wave -position insertpoint -radix hexadecimal  -group "WRAPPER" -group "SOC"  -group "WRITEBACK5" -group internal sim:/tb_wrapper/teknofest_wrapper/soc/writeback/*
 
 ################## BRANCH PREDICTION ##################
-add wave -position insertpoint -radix hexadecimal        -group "WRAPPER" -group "SOC"  -group "FETCH1" -group "BRANCH PREDICTION"       sim:/tb_wrapper/teknofest_wrapper/soc/fetch/branch_prediction/*
-add wave -position insertpoint -radix hexadecimal        -group "WRAPPER" -group "SOC"  -group "FETCH1" -group "BRANCH PREDICTION"  -group "RAS"     sim:/tb_wrapper/teknofest_wrapper/soc/fetch/branch_prediction/ras/*
+add wave -position insertpoint  \
+-radix hexadecimal          -group "WRAPPER" -group "SOC"  -group "FETCH1" -group "BRANCH PREDICTION" \
+sim:/tb_wrapper/teknofest_wrapper/soc/fe_spec \
+sim:/tb_wrapper/teknofest_wrapper/soc/de_spec \
+sim:/tb_wrapper/teknofest_wrapper/soc/ex_pc_target_last \
+sim:/tb_wrapper/teknofest_wrapper/soc/ex_pc_sel \
+sim:/tb_wrapper/teknofest_wrapper/soc/ex_spec
+
+
+add wave -position insertpoint -radix hexadecimal    -in          -group "WRAPPER" -group "SOC"  -group "FETCH1" -group "BRANCH PREDICTION"     -group in        sim:/tb_wrapper/teknofest_wrapper/soc/fetch/branch_prediction/*
+add wave -position insertpoint -radix hexadecimal    -out         -group "WRAPPER" -group "SOC"  -group "FETCH1" -group "BRANCH PREDICTION"     -group out       sim:/tb_wrapper/teknofest_wrapper/soc/fetch/branch_prediction/*
+add wave -position insertpoint -radix hexadecimal    -internal    -group "WRAPPER" -group "SOC"  -group "FETCH1" -group "BRANCH PREDICTION"     -group internal  sim:/tb_wrapper/teknofest_wrapper/soc/fetch/branch_prediction/*
+add wave -position insertpoint -radix hexadecimal     -in         -group "WRAPPER" -group "SOC"  -group "FETCH1" -group "BRANCH PREDICTION"  -group "RAS"  -group in         sim:/tb_wrapper/teknofest_wrapper/soc/fetch/branch_prediction/ras/*
+add wave -position insertpoint -radix hexadecimal     -out        -group "WRAPPER" -group "SOC"  -group "FETCH1" -group "BRANCH PREDICTION"  -group "RAS"  -group out        sim:/tb_wrapper/teknofest_wrapper/soc/fetch/branch_prediction/ras/*
+add wave -position insertpoint -radix hexadecimal     -internal   -group "WRAPPER" -group "SOC"  -group "FETCH1" -group "BRANCH PREDICTION"  -group "RAS"  -group internal   sim:/tb_wrapper/teknofest_wrapper/soc/fetch/branch_prediction/ras/*
 add wave -position insertpoint -radix hexadecimal        -group "WRAPPER" -group "SOC"  -group "FETCH1" -group "IPMA"                    sim:/tb_wrapper/teknofest_wrapper/soc/fetch/ipma/*
 
 

@@ -90,8 +90,9 @@ module stage1_fetch
   t_branch_predict branch_prediction (
       .clk_i        (clk_i),
       .rst_ni       (rst_ni),
+      .spec_hit_i   (spec_hit_i),
       .inst_i       (inst_o),
-      .stall_i      (stall_i),
+      .stall_i      (!pc_en),
       .is_comp_i    (is_comp_o),
       .pc_i         (pc_o),
       .pc2_i        (pc2_o),

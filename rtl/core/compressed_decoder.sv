@@ -60,10 +60,10 @@ module riscv_compressed_decoder
       illegal_instr_o = 1'b0;
       instr_o         = '0;
 
-      unique case (instr_i[1:0])
+      case (instr_i[1:0])
         // C0
         2'b00: begin
-          unique case (instr_i[15:13])
+          case (instr_i[15:13])
             3'b000: begin
               // c.addi4spn -> addi rd', x2, imm
               instr_o = {2'b0, instr_i[10:7], instr_i[12:11], instr_i[5], instr_i[6], 2'b00, 5'h02, 3'b000, 2'b01, instr_i[4:2], OPCODE_OPIMM};
@@ -89,7 +89,7 @@ module riscv_compressed_decoder
 
         // C1
         2'b01: begin
-          unique case (instr_i[15:13])
+          case (instr_i[15:13])
             3'b000: begin
               // c.addi -> addi rd, rd, nzimm
               // c.nop
@@ -123,7 +123,7 @@ module riscv_compressed_decoder
             end
 
             3'b100: begin
-              unique case (instr_i[11:10])
+              case (instr_i[11:10])
                 2'b00, 2'b01: begin
                   // 00: c.srli -> srli rd, rd, shamt
                   // 01: c.srai -> srai rd, rd, shamt
@@ -138,7 +138,7 @@ module riscv_compressed_decoder
                 end
 
                 2'b11: begin
-                  unique case ({
+                  case ({
                     instr_i[12], instr_i[6:5]
                   })
                     3'b000: begin
@@ -181,7 +181,7 @@ module riscv_compressed_decoder
 
         // C2
         2'b10: begin
-          unique case (instr_i[15:13])
+          case (instr_i[15:13])
             3'b000: begin
               // c.slli -> slli rd, rd, shamt
               instr_o = {7'b0, instr_i[6:2], instr_i[11:7], 3'b001, instr_i[11:7], OPCODE_OPIMM};
