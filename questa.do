@@ -15,6 +15,11 @@ configure wave -justifyvalue left
 configure wave -signalnamewidth 1
 
 
+add wave -position insertpoint  \
+-radix decimal \
+sim:/tb_wrapper/teknofest_wrapper/soc/fetch/branch_prediction/per_count_predict_hit \
+sim:/tb_wrapper/teknofest_wrapper/soc/fetch/branch_prediction/per_count_predict_miss
+
 
 add wave -position insertpoint -radix hexadecimal -group "WRAPPER"  sim:/tb_wrapper/teknofest_wrapper/soc/decode/reg_file/registers
 add wave -position insertpoint -radix hexadecimal -group "WRAPPER"  sim:/tb_wrapper/teknofest_wrapper/soc/memory/uart_inst/uart_tx/tx_buffer
