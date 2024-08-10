@@ -87,10 +87,18 @@ module stage1_fetch
       .memregion_o(memregion)  // unused now
   );
 
-  t_branch_predict branch_prediction (
+  `ifdef STATIC_PREDICT
+    t_branch_predict
+  `else
+    t_gshare 
+  `endif
+    branch_prediction (
       .clk_i        (clk_i),
       .rst_ni       (rst_ni),
       .spec_hit_i   (spec_hit_i),
+    `ifndef STATIC_PREDICT
+      .pc_target_i  (pc_target_i),
+    `endif
       .inst_i       (inst_o),
       .stall_i      (!pc_en),
       .is_comp_i    (is_comp_o),

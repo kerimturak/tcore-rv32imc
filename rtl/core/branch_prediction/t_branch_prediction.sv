@@ -18,7 +18,7 @@
 // Project Name:   TCORE                                                      //
 // Language:       SystemVerilog                                              //
 //                                                                            //
-// Description:    2-bit dynamic prediction                                   //
+// Description:    Forward always taken backward not taken                    //
 ////////////////////////////////////////////////////////////////////////////////
 `timescale 1ns / 1ps
 `include "tcore_defines.svh"
@@ -85,13 +85,35 @@ module t_branch_predict (
   );
 `endif
 
-  property check_spec_hit;
-    @(posedge clk_i) disable iff (rst_ni) req_valid |-> (!stall_i && !spec_hit_i) throughout ##1 (!stall_i) or(!stall_i && !spec_hit_i) throughout ##2 (!stall_i);
-  endproperty
+  logic branch_q [1:0];
 
-  assert_check_spec_hit :
-  assert property (check_spec_hit)
-  else $display("Warning: spec_hit_i did not go high within 2 cycles after req_valid without stall_i.");
+  always_ff @(posedge clk_i) begin
+    if (rst_ni) begin
+      branch_q  <= '{default:0};
+    end else if (!stall_i) begin
+      if (!spec_hit_i) begin
+        branch_q  <= '{default:0};
+      end else begin
+        branch_q[1]  <= branch_q[0];
+        branch_q[0]  <= b_type;
+      end
+    end
+  end
 
+  logic [31:0] per_count_predict_hit;
+  logic [31:0] per_count_predict_miss;
+
+  always_ff @(posedge clk_i) begin
+    if (rst_ni) begin
+      per_count_predict_hit  <= '0;
+      per_count_predict_miss <= '0;
+    end else if (!stall_i && branch_q[1]) begin
+      if (!spec_hit_i) begin
+        per_count_predict_miss ++;
+      end else begin
+        per_count_predict_hit ++;
+      end
+    end
+  end
 
 endmodule
