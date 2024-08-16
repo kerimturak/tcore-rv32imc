@@ -57,7 +57,7 @@ module stage1_fetch
   logic                   illegal_instr;
 
   always_ff @(posedge clk_i) begin
-    if (rst_ni) begin
+    if (!rst_ni) begin
       pc_o <= 32'h4000_0000;
     end else if (pc_en) begin
       pc_o <= fetch_valid ? pc_next : pc_o;
@@ -111,7 +111,7 @@ module stage1_fetch
 
   gray_align_buffer gray_align_buffer (
       .clk_i        (clk_i),
-      .rst_i        (rst_ni),
+      .rst_ni       (rst_ni),
       .buff_req_i   (buff_req),
       .buff_res_o   (buff_res),
       .buffer_miss_o(buffer_miss),
@@ -121,7 +121,7 @@ module stage1_fetch
 
   icache icache (
       .clk_i        (clk_i),
-      .rst_i        (rst_ni),
+      .rst_ni        (rst_ni),
       .cache_req_i  (icache_req),
       .cache_res_o  (icache_res),
       .icache_miss_o(icache_miss),

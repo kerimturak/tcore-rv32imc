@@ -44,7 +44,7 @@ module seq_multiplier #(
   assign shift = |(counter ^ 31);  //1: counter<31; 0: counter==31
 
   always_ff @(posedge clk_i) begin
-    if (rst_ni) begin
+    if (!rst_ni) begin
       mult    <= '0;
       product_o    <= '0;
       counter <= '0;

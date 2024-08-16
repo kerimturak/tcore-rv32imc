@@ -26,7 +26,7 @@ module uart
   import tcore_param::*;
 (
     input  logic            clk_i,
-    input  logic            rst_i,
+    input  logic            rst_ni,
     input  logic            stb_i,
     input  logic [     1:0] adr_i,
     input  logic [     3:0] byte_sel_i,
@@ -50,7 +50,7 @@ module uart
 
   uart_tx uart_tx (
       .clk_i     (clk_i),
-      .rst_i     (rst_i),
+      .rst_ni    (rst_ni),
       .baud_div_i(baud_div),
       .tx_we_i   (tx_we),
       .tx_en_i   (tx_en),
@@ -62,7 +62,7 @@ module uart
 
   uart_rx uart_rx (
       .clk_i     (clk_i),
-      .rst_i     (rst_i),
+      .rst_ni    (rst_ni),
       .baud_div_i(baud_div),
       .rx_re_i   (rx_re),
       .rx_en_i   (rx_en),
@@ -73,7 +73,7 @@ module uart
   );
 
   always_ff @(posedge clk_i) begin
-    if (rst_i) begin
+    if (!rst_ni) begin
       tx_en    <= 1'b0;
       rx_en    <= 1'b0;
       baud_div <= 16'b0;

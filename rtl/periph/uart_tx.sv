@@ -26,7 +26,7 @@ module uart_tx
   import tcore_param::*;
 (
     input  logic        clk_i,
-    input  logic        rst_i,
+    input  logic        rst_ni,
     input  logic [15:0] baud_div_i,  // uart sample point
     input  logic        tx_we_i,     // transmitter buffer write enable
     input  logic        tx_en_i,     // transmitter enable
@@ -54,7 +54,7 @@ module uart_tx
       c_state, n_state;  // state machine
 
   always_ff @(posedge clk_i) begin  // asyn reset is necessary for this uart, baud clk controlled by tx_en
-    if (rst_i) c_state <= IDLE;  // we wait in IDLE with asyn reset
+    if (!rst_ni) c_state <= IDLE;  // we wait in IDLE with asyn reset
     else if (baud_clk) c_state <= n_state;  // tx_en and baud clock hit pass to next state
   end
 
@@ -77,7 +77,7 @@ module uart_tx
   end
 
   always_ff @(posedge clk_i) begin
-    if (rst_i) begin
+    if (!rst_ni) begin
       wr_ptr       <= '0;
       rd_ptr       <= '0;  // read pointer shows start point
       baud_clk     <= '0;

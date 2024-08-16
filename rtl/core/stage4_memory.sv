@@ -74,7 +74,7 @@ module stage4_memory
 
   dcache dcache (
       .clk_i        (clk_i),
-      .rst_i        (rst_ni),
+      .rst_ni       (rst_ni),
       .cache_req_i  (dcache_req),
       .cache_res_o  (dcache_res),
       .dcache_miss_o(dcache_miss),
@@ -109,7 +109,7 @@ module stage4_memory
   end
   uart uart_inst (
       .clk_i     (clk_i),
-      .rst_i     (rst_ni),
+      .rst_ni    (rst_ni),
       .stb_i     (pherip_valid),
       .adr_i     (pherip_addr[3:2]),
       .byte_sel_i(pherip_sel),

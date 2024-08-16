@@ -32,7 +32,7 @@ module dcache
     parameter NUM_WAY = DC_WAY
 ) (
     input  logic        clk_i,
-    input  logic        rst_i,
+    input  logic        rst_ni,
     input  dcache_req_t cache_req_i,
     output dcache_res_t cache_res_o,
     output logic        dcache_miss_o,
@@ -87,7 +87,7 @@ module dcache
   logic  [ BLK_SIZE-1:0] evict_data;
 
   always_ff @(posedge clk_i) begin
-    if (rst_i) begin
+    if (!rst_ni) begin
       addr_q      <= '0;
       wdata_q     <= '0;
       uncached_q  <= '0;

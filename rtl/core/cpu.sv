@@ -112,7 +112,7 @@ module cpu
 
   //----------------------------------              decode             ---------------------------------------------
   always_ff @(posedge clk_i) begin
-    if (rst_ni || de_flush_en) begin
+    if (!rst_ni || de_flush_en) begin
       pipe1   <= '{default: 0};
       de_spec <= '0;
     end else if (de_enable) begin
@@ -143,7 +143,7 @@ module cpu
 
   //----------------------------------              execute             ---------------------------------------------
   always_ff @(posedge clk_i) begin
-    if (rst_ni || ex_flush_en) begin
+    if (!rst_ni || ex_flush_en) begin
       pipe2   <= '{default: 0, alu_ctrl: OP_ADD, pc_sel: NO_BJ, rw_size: NO_SIZE};
       ex_spec <= '0;
     end else if (!stall_all) begin
@@ -213,7 +213,7 @@ module cpu
 
   //----------------------------------              memory             ---------------------------------------------
   always_ff @(posedge clk_i) begin
-    if (rst_ni) begin
+    if (!rst_ni) begin
       pipe3 <= '{default: 0, rw_size: NO_SIZE};
     end else if (!stall_all) begin
       pipe3 <= '{
@@ -252,7 +252,7 @@ module cpu
   //----------------------------------              write-back             ---------------------------------------------
 `ifndef REMOVE_WB_STAGE
   always_ff @(posedge clk_i) begin
-    if (rst_ni) begin
+    if (!rst_ni) begin
       pipe4 <= '{default: 0};
     end else if (!stall_all) begin
       pipe4 <= '{
@@ -320,7 +320,7 @@ module cpu
 
   memory_arbiter memory_arbiter (
       .clk_i        (clk_i),
-      .rst_i        (rst_ni),
+      .rst_ni       (rst_ni),
       .iomem_rdata_i(iomem_rdata),
       .icache_req_i (lx_ireq),
       .dcache_req_i (lx_dreq),

@@ -84,7 +84,7 @@ module stage3_execution
 
   alu alu (
       .clk_i      (clk_i),
-      .rst_i      (rst_ni),
+      .rst_ni     (rst_ni),
       .alu_a_i    (operant_a),
       .alu_b_i    (operant_b),
       .op_sel_i   (alu_ctrl_i),

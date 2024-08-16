@@ -129,7 +129,7 @@ module t_gshare (
   end
 
   always_ff @(posedge clk_i) begin
-    if (rst_ni) begin
+    if (!rst_ni) begin
       stage_pc <= '{default: 0};
       branch_q <= '{default: 0};
       taken_q <= '{default: 0};
@@ -159,7 +159,7 @@ module t_gshare (
 
   // Update logic
   always @(posedge clk_i) begin
-    if (rst_ni) begin
+    if (!rst_ni) begin
       ghr        <= '0;
       btb_target <= '{default: 0};
       btb_pc     <= '{default: 0};
@@ -187,7 +187,7 @@ module t_gshare (
   logic [31:0] per_count_predict_miss;
 
   always_ff @(posedge clk_i) begin
-    if (rst_ni) begin
+    if (!rst_ni) begin
       per_count_predict_hit  <= '0;
       per_count_predict_miss <= '0;
     end else if (!stall_i && branch_q[1]) begin
@@ -203,7 +203,7 @@ module t_gshare (
   logic [31:0] per_ras_count_predict_miss;
 
   always_ff @(posedge clk_i) begin
-    if (rst_ni) begin
+    if (!rst_ni) begin
       per_ras_count_predict_hit  <= '0;
       per_ras_count_predict_miss <= '0;
     end else if (!stall_i && ras_taken_q[1]) begin

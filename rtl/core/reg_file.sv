@@ -27,7 +27,7 @@ module reg_file
   import tcore_param::*;
 (
     input  logic            clk_i,
-    input  logic            rst_i,
+    input  logic            rst_ni,
     input  logic            rw_en_i,
     input  logic [     4:0] r1_addr_i,
     input  logic [     4:0] r2_addr_i,
@@ -45,7 +45,7 @@ module reg_file
   end
 
   always_ff @(posedge clk_i) begin : register_write
-    if (rst_i) begin
+    if (!rst_ni) begin
       registers <= '{default: 0};
     end else if (rw_en_i == 1'b1 && waddr_i != 5'b0) begin
       registers[waddr_i] <= wdata_i;

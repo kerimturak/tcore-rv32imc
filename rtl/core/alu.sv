@@ -29,7 +29,7 @@ module alu
   import tcore_param::*;
 (
     input  logic               clk_i,
-    input  logic               rst_i,
+    input  logic               rst_ni,
     input  logic    [XLEN-1:0] alu_a_i,
     input  logic    [XLEN-1:0] alu_b_i,
     input  alu_op_e            op_sel_i,
@@ -118,7 +118,7 @@ module alu
   end
 
   always_ff @(posedge clk_i) begin
-    if (rst_i) alu_stall_q <= 0;
+    if (!rst_ni) alu_stall_q <= 0;
     else alu_stall_q <= alu_stall_o;
   end
 
@@ -170,7 +170,7 @@ module alu
   assign mul_busy = state != IDLE;
 
   always_ff @(posedge clk_i) begin
-    if (rst_i) begin
+    if (!rst_ni) begin
       state <= IDLE;
       unsigned_prod <= 64'd0;
       mul_valid <= 1'b0;
@@ -223,7 +223,7 @@ module alu
       .SIZE(32)
   ) seq_multiplier_inst (
       .clk_i         (clk_i),
-      .rst_ni        (rst_i),
+      .rst_ni        (rst_ni),
       .start_i       (mul_start),
       .busy_o        (mul_busy),
       .done_o        (),
@@ -239,7 +239,7 @@ module alu
       .WIDTH(32)
   ) divu_int_inst (
       .clk_i     (clk_i),
-      .rst_ni    (rst_i),
+      .rst_ni    (rst_ni),
       .start_i   (div_start),
       .busy_o    (div_busy),
       .done_o    (),

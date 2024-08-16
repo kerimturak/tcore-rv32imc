@@ -69,7 +69,7 @@ module ras (
   end
 
   always_ff @(posedge clk_i) begin
-    if (rst_ni) begin
+    if (!rst_ni) begin
       ras <= '{default: 0};
     end else begin
       if (restore_i) begin

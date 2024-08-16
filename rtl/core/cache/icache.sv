@@ -31,7 +31,7 @@ module icache #(
     parameter NUM_WAY = IC_WAY
 ) (
     input  logic        clk_i,
-    input  logic        rst_i,
+    input  logic        rst_ni,
     input  icache_req_t cache_req_i,
     output icache_res_t cache_res_o,
     output logic        icache_miss_o,
@@ -120,7 +120,7 @@ module icache #(
   );
 
   always_ff @(posedge clk_i) begin
-    if (rst_i) begin
+    if (!rst_ni) begin
       cpu_valid_q <= '0;
       addr_q      <= '0;
       uncached_q  <= '0;

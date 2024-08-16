@@ -26,7 +26,7 @@
 import tcore_param::*;
 module memory_arbiter (
     input  logic                       clk_i,
-    input  logic                       rst_i,
+    input  logic                       rst_ni,
     input  ilowX_req_t                 icache_req_i,
     input  dlowX_req_t                 dcache_req_i,
     input  logic                       mem_ready_i,
@@ -69,7 +69,7 @@ module memory_arbiter (
   end
 
   always_ff @(posedge clk_i) begin
-    if (rst_i) begin
+    if (!rst_ni) begin
       round <= IDLE;
     end else begin
       case (round_e'({

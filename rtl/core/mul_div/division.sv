@@ -57,7 +57,7 @@ module divu_int #(
   end
 
   always_ff @(posedge clk_i) begin
-    if (rst_ni) begin
+    if (!rst_ni) begin
       busy_o     <= 1'b0;
       done_o     <= 1'b0;
       valid_o    <= 1'b0;

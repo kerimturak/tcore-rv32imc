@@ -26,7 +26,7 @@ module uart_rx
   import tcore_param::*;
 (
     input  logic        clk_i,
-    input  logic        rst_i,
+    input  logic        rst_ni,
     input  logic [15:0] baud_div_i,
     input  logic        rx_re_i,
     input  logic        rx_en_i,
@@ -53,7 +53,7 @@ module uart_rx
       c_state, n_state;
 
   always_ff @(posedge clk_i) begin
-    if (rst_i) begin
+    if (!rst_ni) begin
       rd_ptr       <= '0;
       baud_counter <= '0;
       baud_clk     <= '0;
@@ -76,7 +76,7 @@ module uart_rx
   end
 
   always_ff @(posedge clk_i) begin
-    if (rst_i) begin
+    if (!rst_ni) begin
       c_state     <= IDLE;
       wr_ptr      <= '0;
       bit_counter <= '0;

@@ -57,7 +57,7 @@ module stage2_decode
 
   reg_file reg_file (
       .clk_i    (clk_i),
-      .rst_i    (rst_ni),
+      .rst_ni   (rst_ni),
       .rw_en_i  (rf_rw_en_i),
       .r1_addr_i(inst_i.r1_addr),
       .r2_addr_i(inst_i.r2_addr),
