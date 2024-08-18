@@ -24,6 +24,8 @@ sim:/tb_wrapper/teknofest_wrapper/soc/fetch/branch_prediction/per_count_predict_
 add wave -position insertpoint -radix hexadecimal -group "WRAPPER"  sim:/tb_wrapper/teknofest_wrapper/soc/decode/reg_file/registers
 add wave -position insertpoint -radix hexadecimal -group "WRAPPER"  sim:/tb_wrapper/teknofest_wrapper/soc/memory/uart_inst/uart_tx/tx_buffer
 
+add wave -position insertpoint -radix hexadecimal -group "WRAPPER"  -group "CSR" sim:/tb_wrapper/teknofest_wrapper/soc/execution/u_cs_reg_file/*
+
 ################## Wrapper ##################
 add wave -position insertpoint -radix hexadecimal -in       -group "WRAPPER" -group in       sim:/tb_wrapper/teknofest_wrapper/*
 add wave -position insertpoint -radix hexadecimal -out      -group "WRAPPER" -group out      sim:/tb_wrapper/teknofest_wrapper/*

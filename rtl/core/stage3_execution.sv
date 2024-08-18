@@ -36,6 +36,10 @@ module stage3_execution
     input  logic    [XLEN-1:0] r2_data_i,
     input  logic    [     1:0] alu_in1_sel_i,
     input  logic               alu_in2_sel_i,
+    input  logic               rd_csr_i,
+    input  logic               wr_csr_i,
+    input  logic    [    11:0] csr_idx_i,
+    input  logic               csr_or_data_i,
     input  logic               is_comp_i,
     input  logic    [XLEN-1:0] pc_i,
     input  logic    [XLEN-1:0] pc2_i,
@@ -57,6 +61,8 @@ module stage3_execution
   logic                   ex_zero;
   logic                   ex_slt;
   logic                   ex_sltu;
+  logic        [XLEN-1:0] alu_result;
+  logic        [XLEN-1:0] csr_rdata;
 
   always_comb begin
     data_a = fwd_a_i[1] ? alu_result_i : (fwd_a_i[0] ? wb_data_i : r1_data_i);
@@ -86,13 +92,25 @@ module stage3_execution
       .clk_i      (clk_i),
       .rst_ni     (rst_ni),
       .alu_a_i    (operant_a),
+      .csr_rdata_i(csr_rdata),
       .alu_b_i    (operant_b),
       .op_sel_i   (alu_ctrl_i),
       .alu_stall_o(alu_stall_o),
       .zero_o     (ex_zero),
       .slt_o      (ex_slt),
       .sltu_o     (ex_sltu),
-      .alu_o      (alu_result_o)
+      .alu_o      (alu_result)
   );
 
+  assign alu_result_o = csr_or_data_i ? csr_rdata : alu_result;
+
+  cs_reg_file u_cs_reg_file (
+      .clk_i      (clk_i),
+      .rst_ni     (rst_ni),
+      .rd_en_i    (rd_csr_i),
+      .wr_en_i    (wr_csr_i),
+      .csr_idx_i  (csr_idx_i),
+      .csr_wdata_i(alu_result),
+      .csr_rdata_o(csr_rdata)
+  );
 endmodule

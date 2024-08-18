@@ -30,6 +30,7 @@ module alu
 (
     input  logic               clk_i,
     input  logic               rst_ni,
+    input  logic    [XLEN-1:0] csr_rdata_i,
     input  logic    [XLEN-1:0] alu_a_i,
     input  logic    [XLEN-1:0] alu_b_i,
     input  alu_op_e            op_sel_i,
@@ -293,6 +294,12 @@ module alu
       OP_REM:    alu_o = rslt.REM;
       OP_REMU:   alu_o = rslt.REMU;
       OP_LUI:    alu_o = rslt.LUI;
+      OP_CSRRW:  alu_o = alu_a_i;
+      OP_CSRRS:  alu_o = csr_rdata_i | alu_a_i;
+      OP_CSRRC:  alu_o = csr_rdata_i & ~alu_a_i;
+      OP_CSRRWI: alu_o = alu_a_i;
+      OP_CSRRSI: alu_o = csr_rdata_i | alu_b_i;
+      OP_CSRRCI: alu_o = csr_rdata_i & ~alu_b_i;
       default:   alu_o = 0;
     endcase
 

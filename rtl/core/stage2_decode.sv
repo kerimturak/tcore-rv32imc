@@ -49,9 +49,10 @@ module stage2_decode
   end
 
   control_unit control_unit (
-      .op_i    (inst_i.opcode),
-      .funct3_i(inst_i.funct3),
-      .funct7_i(inst_i.funct7),
+      //.op_i    (inst_i.opcode),
+      //.funct3_i(inst_i.funct3),
+      //.funct7_i(inst_i.funct7),
+      .inst_i(inst_i),
       .ctrl_o  (ctrl_o)
   );
 

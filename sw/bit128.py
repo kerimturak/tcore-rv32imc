@@ -1,6 +1,6 @@
 
 import sys
-girdi_dosyasi = "./sw/test.hex"
+girdi_dosyasi = "./tests/hex_test/test.hex"
 
 cikti_dosyasi = "coremark_baremetal.mem"
 

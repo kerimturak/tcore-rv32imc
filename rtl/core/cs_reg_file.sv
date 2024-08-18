@@ -14,34 +14,59 @@
 // Additional contributions by:                                               //
 //                 --                                                         //
 //                                                                            //
-// Design Name:    extend                                                     //
+// Design Name:    reg_file                                                   //
 // Project Name:   TCORE                                                      //
 // Language:       SystemVerilog                                              //
 //                                                                            //
-// Description:    Immediate extracter frım instruction                       //
+// Description:    Core integer registers                                     //
 ////////////////////////////////////////////////////////////////////////////////
 
 `timescale 1ns / 1ps
 `include "tcore_defines.svh"
-module extend
+module cs_reg_file
   import tcore_param::*;
 (
-    input logic [XLEN-1:7] imm_i,
-    input imm_e sel_i,
-    output logic [XLEN-1:0] imm_o
+    input  logic            clk_i,
+    input  logic            rst_ni,
+    input  logic            rd_en_i,
+    input  logic            wr_en_i,
+    input  logic [    11:0] csr_idx_i,
+    input  logic [XLEN-1:0] csr_wdata_i,
+    output logic [XLEN-1:0] csr_rdata_o
 );
 
-  always_comb begin : immediate_generator
-    case (sel_i)
-      I_IMM:   imm_o = {{20{imm_i[31]}}, imm_i[31:20]};  // i 12-bit signed immediate
-      I_USIMM: imm_o = {{20{1'b0}}, imm_i[31:20]};  // i 12-bit unsigned immediate
-      S_IMM:   imm_o = {{20{imm_i[31]}}, imm_i[31:25], imm_i[11:7]};  // s 12-bit signed immediate
-      B_IMM:   imm_o = {{20{imm_i[31]}}, imm_i[7], imm_i[30:25], imm_i[11:8], 1'b0};  // b 13-bit signed immediate
-      U_IMM:   imm_o = {{imm_i[31:12]}, 12'b0};  // u 20-bit signed immediate
-      J_IMM:   imm_o = {{12{imm_i[31]}}, imm_i[19:12], imm_i[20], imm_i[30:21], 1'b0};  // j 20-bit signed immediate
-      CSR_IMM: imm_o = {27'b0, imm_i[19:15]};
-      default: imm_o = '0;
-    endcase
-  end
+  localparam MVENDORID = 12'hF11, MARCHID = 12'hF12, MIMPID = 12'hF13, MHARTID = 12'hF14,
+  //machine trap setup
+  MSTATUS = 12'h300, MISA = 12'h301, MIE = 12'h304, MTVEC = 12'h305,
+  //machine trap handling
+  MSCRATCH = 12'h340, MEPC = 12'h341, MCAUSE = 12'h342, MTVAL = 12'h343, MIP = 12'h344,
+  //machine counters/timers
+  MCYCLE = 12'hB00, MCYCLEH = 12'hB80,
+  //TIME = 12'hC01,
+  //TIMEH = 12'hC81,
+  MINSTRET = 12'hB02, MINSTRETH = 12'hBB2, MCOUNTINHIBIT = 12'h320;
 
+  logic [XLEN-1:0] mstatus;
+  always_ff @(posedge clk_i) begin
+    if (!rst_ni) begin
+      csr_rdata_o <= '0;
+      mstatus     <= '0;
+    end else begin
+      case (csr_idx_i)
+        MSTATUS: begin
+          case ({
+            rd_en_i, wr_en_i
+          })
+            2'b00: csr_rdata_o <= '0;
+            2'b01: mstatus <= csr_wdata_i;
+            2'b10: csr_rdata_o <= mstatus;
+            2'b11: begin
+              csr_rdata_o <= mstatus;
+              mstatus <= csr_wdata_i;
+            end
+          endcase
+        end
+      endcase
+    end
+  end
 endmodule

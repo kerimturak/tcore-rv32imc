@@ -25,6 +25,8 @@
 package tcore_param;
   localparam XLEN = 32;
   localparam BLK_SIZE = 128;
+
+  localparam [6:0] system = 7'b11100_11;
   localparam [6:0] op_r_type = 7'b01100_11;  // 51, add, sub, sll, slt, sltu, xor, srl, sra, or, and,
   localparam [6:0] op_i_type_load = 7'b00000_11;  // lb, lh, lw, lbu, lhu,
   localparam [6:0] op_i_type = 7'b00100_11;  // addi, slti, sltiu, xori, ori, andi, slli, srli, srai,
@@ -50,6 +52,16 @@ package tcore_param;
   localparam BUFFER_CAPACITY = 8 * BLK_SIZE;
 
   localparam Mul_Type = 0;  // 1: dadda 0: wallace
+
+  typedef enum logic [2:0] {
+    CSRRW  = 3'h1,
+    CSRRS  = 3'h2,
+    CSRRC  = 3'h3,
+    CSRRWI = 3'h5,
+    CSRRSI = 3'h6,
+    CSRRCI = 3'h7
+  } csr_op_t;
+
   typedef enum logic [3:0] {
     NO_BJ,
     BEQ,
@@ -69,14 +81,15 @@ package tcore_param;
     WORD
   } size_e;
 
-  typedef enum logic [2:0] {
+  typedef enum logic [3:0] {
     NO_IMM,
     I_IMM,
     I_USIMM,
     S_IMM,
     B_IMM,
     U_IMM,
-    J_IMM
+    J_IMM,
+    CSR_IMM
   } imm_e;
 
   typedef enum logic [4:0] {
@@ -98,7 +111,13 @@ package tcore_param;
     OP_DIVU,
     OP_REM,
     OP_REMU,
-    OP_LUI
+    OP_LUI,
+    OP_CSRRW,
+    OP_CSRRS,
+    OP_CSRRC,
+    OP_CSRRWI,
+    OP_CSRRSI,
+    OP_CSRRCI
   } alu_op_e;
 
   typedef struct packed {
@@ -138,6 +157,10 @@ package tcore_param;
     logic [4:0]      r2_addr;
     logic [4:0]      rd_addr;      //! destination register address
     logic [XLEN-1:0] imm;          //! immediate generater output
+    logic            rd_csr;
+    logic            wr_csr;
+    logic [11:0]     csr_idx;
+    logic            csr_or_data;
   } pipe2_t;
 
   typedef struct packed {
@@ -166,16 +189,20 @@ package tcore_param;
   } pipe4_t;
 
   typedef struct packed {
-    logic       rf_rw_en;
-    imm_e       imm_sel;
-    logic       wr_en;
-    size_e      rw_size;
-    logic [1:0] result_src;
-    alu_op_e    alu_ctrl;
-    pc_sel_e    pc_sel;
-    logic [1:0] alu_in1_sel;
-    logic       alu_in2_sel;
-    logic       ld_op_sign;
+    logic        rf_rw_en;
+    imm_e        imm_sel;
+    logic        wr_en;
+    size_e       rw_size;
+    logic [1:0]  result_src;
+    alu_op_e     alu_ctrl;
+    pc_sel_e     pc_sel;
+    logic [1:0]  alu_in1_sel;
+    logic        alu_in2_sel;
+    logic        ld_op_sign;
+    logic        rd_csr;
+    logic        wr_csr;
+    logic [11:0] csr_idx;
+    logic        csr_or_data;
   } ctrl_t;
 
   typedef struct packed {

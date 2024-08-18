@@ -1,4 +1,3 @@
-import configure::*;
 
 module mutex
 #(
