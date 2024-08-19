@@ -35,38 +35,108 @@ module cs_reg_file
     output logic [XLEN-1:0] csr_rdata_o
 );
 
-  localparam MVENDORID = 12'hF11, MARCHID = 12'hF12, MIMPID = 12'hF13, MHARTID = 12'hF14,
+  localparam MVENDORID = 12'hF11;
+  localparam MARCHID = 12'hF12;
+  localparam MIMPID = 12'hF13;
+  localparam MHARTID = 12'hF14;
   //machine trap setup
-  MSTATUS = 12'h300, MISA = 12'h301, MIE = 12'h304, MTVEC = 12'h305,
+  localparam MSTATUS = 12'h300;
+  localparam MISA = 12'h301;
+  localparam MIE = 12'h304;
+  localparam MTVEC = 12'h305;
   //machine trap handling
-  MSCRATCH = 12'h340, MEPC = 12'h341, MCAUSE = 12'h342, MTVAL = 12'h343, MIP = 12'h344,
+  localparam MSCRATCH = 12'h340;
+  localparam MEPC = 12'h341;
+  localparam MCAUSE = 12'h342;
+  localparam MTVAL = 12'h343;
+  localparam MIP = 12'h344;
   //machine counters/timers
-  MCYCLE = 12'hB00, MCYCLEH = 12'hB80,
+  localparam MCYCLE = 12'hB00;
+  localparam MCYCLEH = 12'hB80;
   //TIME = 12'hC01,
   //TIMEH = 12'hC81,
-  MINSTRET = 12'hB02, MINSTRETH = 12'hBB2, MCOUNTINHIBIT = 12'h320;
+  localparam MINSTRET = 12'hB02;
+  localparam MINSTRETH = 12'hBB2;
+  localparam MCOUNTINHIBIT = 12'h320;
 
-  logic [XLEN-1:0] mstatus;
+  localparam MXLEN = 32;
+  typedef struct packed {
+    logic [25:0] extensions;
+    logic [MXLEN-3:26] nonimp;
+    logic [MXLEN-1:MXLEN-2] mxl;
+  } misa_t;
+
+  typedef struct packed {
+    logic [3] mie;
+    logic [7] mpie;
+    logic [12:11] mpp;
+  } mstatus_t;
+
+  misa_t               misa;
+  mstatus_t            mstatus;
+  logic     [XLEN-1:0] mie;
+  logic     [XLEN-1:0] mtvec;
+  logic     [XLEN-1:0] mstratch;
+  logic     [XLEN-1:0] mepc;
+  logic     [XLEN-1:0] mcause;
+  logic     [XLEN-1:0] mtval;
+  logic     [XLEN-1:0] mip;
+  logic     [XLEN-1:0] mcycle;
+  logic     [XLEN-1:0] mcycleh;
+  logic     [XLEN-1:0] minstret;
+  logic     [XLEN-1:0] minstreth;
+  logic                mcountinhibit;
+
   always_ff @(posedge clk_i) begin
     if (!rst_ni) begin
-      csr_rdata_o <= '0;
-      mstatus     <= '0;
-    end else begin
+      mstatus <= '0;
+
+      misa.extensions <= 32'b0 | (1'b1 << 2) | (1'b1 << 8) | (1'b1 << 12);
+      misa.nonimp <= '0;
+      misa.mxl <= 'b1;
+      mstatus <= '0;
+    end else if (wr_en_i) begin
       case (csr_idx_i)
-        MSTATUS: begin
-          case ({
-            rd_en_i, wr_en_i
-          })
-            2'b00: csr_rdata_o <= '0;
-            2'b01: mstatus <= csr_wdata_i;
-            2'b10: csr_rdata_o <= mstatus;
-            2'b11: begin
-              csr_rdata_o <= mstatus;
-              mstatus <= csr_wdata_i;
-            end
-          endcase
-        end
+        MISA:          misa <= csr_wdata_i;
+        MSTATUS:       mstatus <= csr_wdata_i;
+        MIE:           mie <= csr_wdata_i;
+        MTVEC:         mtvec <= csr_wdata_i;
+        MSCRATCH:      mstratch <= csr_wdata_i;
+        MEPC:          mepc <= csr_wdata_i;
+        MCAUSE:        mcause <= csr_wdata_i;
+        MTVAL:         mtval <= csr_wdata_i;
+        MIP:           mip <= csr_wdata_i;
+        MCYCLE:        mcycle <= csr_wdata_i;
+        MCYCLEH:       mcycleh <= csr_wdata_i;
+        MINSTRET:      minstret <= csr_wdata_i;
+        MINSTRETH:     minstreth <= csr_wdata_i;
+        MCOUNTINHIBIT: mcountinhibit <= csr_wdata_i;
       endcase
+    end
+  end
+
+  always_comb begin
+    if (rd_en_i) begin
+      case (csr_idx_i)
+        MISA:                                csr_rdata_o = misa;
+        MVENDORID, MARCHID, MIMPID, MHARTID: csr_rdata_o = '0;
+        MSTATUS:                             csr_rdata_o = mstatus;
+        MIE:                                 csr_rdata_o = mie;
+        MTVEC:                               csr_rdata_o = mtvec;
+        MSCRATCH:                            csr_rdata_o = mstratch;
+        MEPC:                                csr_rdata_o = mepc;
+        MCAUSE:                              csr_rdata_o = mcause;
+        MTVAL:                               csr_rdata_o = mtval;
+        MIP:                                 csr_rdata_o = mip;
+        MCYCLE:                              csr_rdata_o = mcycle;
+        MCYCLEH:                             csr_rdata_o = mcycleh;
+        MINSTRET:                            csr_rdata_o = minstret;
+        MINSTRETH:                           csr_rdata_o = minstreth;
+        MCOUNTINHIBIT:                       csr_rdata_o = mcountinhibit;
+        default:                             csr_rdata_o = '0;
+      endcase
+    end else begin
+      csr_rdata_o = '0;
     end
   end
 endmodule

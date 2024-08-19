@@ -297,7 +297,7 @@ module alu
       OP_CSRRW:  alu_o = alu_a_i;
       OP_CSRRS:  alu_o = csr_rdata_i | alu_a_i;
       OP_CSRRC:  alu_o = csr_rdata_i & ~alu_a_i;
-      OP_CSRRWI: alu_o = alu_a_i;
+      OP_CSRRWI: alu_o = alu_b_i;
       OP_CSRRSI: alu_o = csr_rdata_i | alu_b_i;
       OP_CSRRCI: alu_o = csr_rdata_i & ~alu_b_i;
       default:   alu_o = 0;
