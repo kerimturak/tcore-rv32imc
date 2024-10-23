@@ -1,0 +1,118 @@
+site_name: TCORE
+site_url: https://tcore.org/
+theme:
+  palette:
+    # Light mode configuration
+    - scheme: default
+      primary: deep purple
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Dark mode configuration
+    - scheme: slate
+      primary: deep purple
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  language: en
+  name: material
+  logo: ./images/tcore_back.png
+  favicon: ./images/tcore.png
+
+
+  font:
+    text: Roboto
+    code: Roboto Mono
+  features:
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.path
+    - navigation.prune 
+    - navigation.indexes
+    - toc.follow
+    - toc.integrate
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - search.share
+extra:
+  alternate:
+    - name: English
+      link: /en/
+      lang: en
+    - name: Turkish
+      link: /tr/
+      lang: tr
+  consent:
+    title: Cookie consent
+    description: >- 
+      We use cookies to recognize your repeated visits and preferences, as well
+      as to measure the effectiveness of our documentation and whether users
+      find what they're searching for. With your consent, you're helping us to
+      make our documentation better.
+    cookies:
+      analytics: Google Analytics 
+      custom: Custom cookie
+      
+copyright: >
+  Copyright &copy; 2023 - 2024 Kerim Turak –
+  <a href="#__consent">Change cookie settings</a>
+
+plugins:
+  - privacy
+  - search
+  - blog
+  - rss:
+      match_path: blog/posts/.* 
+      date_from_meta:
+        as_creation: date
+      categories:
+        - categories
+        - tags 
+#markdown_extensions:
+#  - material.extensions.preview:
+#      targets:
+#        include:
+#          - changelog/index.md
+#          - customization.md
+#          - insiders/changelog/*
+#          - setup/extensions/*
+
+markdown_extensions:
+  - pymdownx.superfences:
+        custom_fences:
+          - name: mermaid
+            class: mermaid
+            format: !!python/name:pymdownx.superfences.fence_code_format
+  - abbr
+  - admonition
+  - attr_list
+
+nav:
+  - Home: index.md
+  - Overview:
+      - Introduction: ./overview/introduction.md
+      - Architecture: ./overview/architecture.md
+      - Features: ./overview/features.md
+  - Design Details:
+      - Processor Core: ./design/processor-core.md
+      - Memory Management: ./design/memory-management.md
+      - Pipeline: ./design/pipeline.md
+      - ALU Design: ./design/alu.md
+  - Development:
+      - Getting Started: ./development/getting-started.md
+      - Environment Setup: ./development/environment-setup.md
+      - Simulation & Testing: ./development/simulation-testing.md
+  - Reference:
+      - Instruction Set: ./reference/instruction-set.md
+      - Debugging: ./reference/debugging.md
+      - FAQ: ./reference/faq.md
+  - Blog: blog/index.md
+  - About: about/about.md
