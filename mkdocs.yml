@@ -22,7 +22,7 @@ theme:
   logo: ./images/tcore_back.png
   favicon: ./images/tcore.png
 
-
+ 
   font:
     text: Roboto
     code: Roboto Mono
