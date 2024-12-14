@@ -12,14 +12,14 @@
       
       
       
-        <link rel="next" href="overview/introduction/">
+        <link rel="next" href="design/overview/">
       
       
         <link rel="alternate" type="application/rss+xml" title="RSS feed" href="feed_rss_created.xml">
         <link rel="alternate" type="application/rss+xml" title="RSS feed of updated content" href="feed_rss_updated.xml">
       
       <link rel="icon" href="images/tcore.png">
-      <meta name="generator" content="mkdocs-1.6.0, mkdocs-material-9.5.42">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.5.42">
     
     
       
@@ -75,7 +75,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#welcome-to-mkdocs" class="md-skip">
+        <a href="#welcome-to-tcore-documentation" class="md-skip">
           Skip to content
         </a>
       
@@ -253,72 +253,12 @@
     
     
       <li class="md-tabs__item">
-        <a href="overview/introduction/" class="md-tabs__link">
-          
-  
-    
-  
-  Overview
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
-    
-    
-      <li class="md-tabs__item">
-        <a href="design/processor-core/" class="md-tabs__link">
+        <a href="design/overview/" class="md-tabs__link">
           
   
     
   
   Design Details
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
-    
-    
-      <li class="md-tabs__item">
-        <a href="development/getting-started/" class="md-tabs__link">
-          
-  
-    
-  
-  Development
-
-        </a>
-      </li>
-    
-  
-
-      
-        
-  
-  
-  
-    
-    
-      <li class="md-tabs__item">
-        <a href="reference/instruction-set/" class="md-tabs__link">
-          
-  
-    
-  
-  Reference
 
         </a>
       </li>
@@ -455,18 +395,36 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#commands" class="md-nav__link">
+  <a href="#key-features" class="md-nav__link">
     <span class="md-ellipsis">
-      Commands
+      Key Features
     </span>
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#project-layout" class="md-nav__link">
+  <a href="#future-goals" class="md-nav__link">
     <span class="md-ellipsis">
-      Project layout
+      Future Goals
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#performance-highlights" class="md-nav__link">
+    <span class="md-ellipsis">
+      Performance Highlights
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#learn-more" class="md-nav__link">
+    <span class="md-ellipsis">
+      Learn More
     </span>
   </a>
   
@@ -495,54 +453,6 @@
       
         
       
-    
-    
-      
-      
-        
-      
-    
-    
-      
-        
-        
-      
-    
-    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
-      
-        
-  
-  
-    <a href="overview/introduction/" class="md-nav__link">
-      
-  
-  <span class="md-ellipsis">
-    Overview
-  </span>
-  
-
-      
-        <span class="md-nav__icon md-icon"></span>
-      
-    </a>
-  
-
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
-      
-        
-      
         
       
         
@@ -567,115 +477,11 @@
         
   
   
-    <a href="design/processor-core/" class="md-nav__link">
+    <a href="design/overview/" class="md-nav__link">
       
   
   <span class="md-ellipsis">
     Design Details
-  </span>
-  
-
-      
-        <span class="md-nav__icon md-icon"></span>
-      
-    </a>
-  
-
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-    
-    
-      
-      
-        
-      
-    
-    
-      
-        
-        
-      
-    
-    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
-      
-        
-  
-  
-    <a href="development/getting-started/" class="md-nav__link">
-      
-  
-  <span class="md-ellipsis">
-    Development
-  </span>
-  
-
-      
-        <span class="md-nav__icon md-icon"></span>
-      
-    </a>
-  
-
-      
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    
-    
-      
-        
-      
-        
-      
-        
-      
-    
-    
-      
-      
-        
-      
-    
-    
-      
-        
-        
-      
-    
-    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
-      
-        
-  
-  
-    <a href="reference/instruction-set/" class="md-nav__link">
-      
-  
-  <span class="md-ellipsis">
-    Reference
   </span>
   
 
@@ -747,29 +553,32 @@
                   
 
 
-<p>nav:
-  - Section:
-    - section/index.md 
-    - Page 1: section/page-1.md
-    ...
-    - Page n: section/page-n.md</p>
-<h1 id="welcome-to-mkdocs">Welcome to MkDocs</h1>
-<p>For full documentation visit <a href="https://www.mkdocs.org">mkdocs.org</a>.</p>
-<h2 id="commands">Commands</h2>
+<h1 id="welcome-to-tcore-documentation">Welcome to TCore Documentation</h1>
+<p>TCore is a RISC-V based processor core implementing the RV32IMC instruction set architecture. It is designed to be simple yet configurable, providing a flexible foundation for educational, experimental, and lightweight embedded applications. This documentation will guide you through understanding, configuring, and using TCore effectively.</p>
+<h2 id="key-features">Key Features</h2>
 <ul>
-<li><code>mkdocs new [dir-name]</code> - Create a new project.</li>
-<li><code>mkdocs serve</code> - Start the live-reloading docs server.</li>
-<li><code>mkdocs build</code> - Build the documentation site.</li>
-<li><code>mkdocs -h</code> - Print help message and exit.</li>
+<li><strong>RISC-V RV32IMC ISA</strong>: Supports integer, multiplication/division, and compressed instructions.</li>
+<li><strong>Configurable Memory System</strong>: Optimized for various embedded applications.</li>
+<li><strong>Pipeline Design</strong>: Focused on efficient data processing.</li>
+<li><strong>UART Support</strong>: For communication and debugging.</li>
+<li><strong>FPGA Friendly</strong>: Designed with FPGA implementation in mind.</li>
 </ul>
-<h2 id="project-layout">Project layout</h2>
-<pre><code>mkdocs.yml    # The configuration file.
-docs/
-    index.md  # The documentation homepage.
-    ...       # Other markdown pages, images and other files.
-</code></pre>
-<div class="highlight"><pre><span></span><code><span class="k">assign</span><span class="w"> </span><span class="n">a</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span>
-</code></pre></div>
+<h2 id="future-goals">Future Goals</h2>
+<ul>
+<li>Adding a branch predictor for performance optimization.</li>
+<li>Achieving compatibility with official RISC-V International test suites.</li>
+<li>Implementing machine mode CSR (Control and Status Registers).</li>
+<li>Providing documentation in both English and Turkish.</li>
+<li>Supporting open-source ASIC synthesis for low-cost custom designs.</li>
+</ul>
+<h2 id="performance-highlights">Performance Highlights</h2>
+<ul>
+<li><strong>Core Configurations</strong>: Available for RV32I, RV32IC, and RV32IMC.</li>
+<li><strong>CoreMark/MHz</strong>: 2.20 for RV32IMC configuration.</li>
+<li><strong>Branch Prediction Accuracy</strong>: Implements gshare with an 85% accuracy rate.</li>
+</ul>
+<h2 id="learn-more">Learn More</h2>
+<p>Visit the <a href="https://github.com/kerimturak/tcore-rv32imc">GitHub repository</a> for the source code, implementation details, and contribution guidelines. This documentation will be continually updated as TCore evolves to meet its development goals.</p>
 
 
 
