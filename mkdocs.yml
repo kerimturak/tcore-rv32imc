@@ -97,22 +97,12 @@ markdown_extensions:
 
 nav:
   - Home: index.md
-  - Overview:
-      - Introduction: ./overview/introduction.md
-      - Architecture: ./overview/architecture.md
-      - Features: ./overview/features.md
   - Design Details:
-      - Processor Core: ./design/processor-core.md
-      - Memory Management: ./design/memory-management.md
-      - Pipeline: ./design/pipeline.md
-      - ALU Design: ./design/alu.md
-  - Development:
-      - Getting Started: ./development/getting-started.md
-      - Environment Setup: ./development/environment-setup.md
-      - Simulation & Testing: ./development/simulation-testing.md
-  - Reference:
-      - Instruction Set: ./reference/instruction-set.md
-      - Debugging: ./reference/debugging.md
-      - FAQ: ./reference/faq.md
+      - Overview: ./design/overview.md
+      - Fetch Stage: ./design/fetch.md
+      - Decode Stage: ./design/decode.md
+      - Execute Stage: ./design/execute.md
+      - Memory Stage: ./design/memory.md
+      - Writeback Stage: ./design/writeback.md
   - Blog: blog/index.md
   - About: about/about.md

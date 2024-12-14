@@ -6,27 +6,32 @@ search:
   boost: 2 
 ---
 
-nav:
-  - Section:
-    - section/index.md 
-    - Page 1: section/page-1.md
-    ...
-    - Page n: section/page-n.md
+# Welcome to TCore Documentation
 
-# Welcome to MkDocs
+TCore is a RISC-V based processor core implementing the RV32IMC instruction set architecture. It is designed to be simple yet configurable, providing a flexible foundation for educational, experimental, and lightweight embedded applications. This documentation will guide you through understanding, configuring, and using TCore effectively.
 
-For full documentation visit [mkdocs.org](https://www.mkdocs.org).
+## Key Features
 
-## Commands
+- **RISC-V RV32IMC ISA**: Supports integer, multiplication/division, and compressed instructions.
+- **Configurable Memory System**: Optimized for various embedded applications.
+- **Pipeline Design**: Focused on efficient data processing.
+- **UART Support**: For communication and debugging.
+- **FPGA Friendly**: Designed with FPGA implementation in mind.
 
-* `mkdocs new [dir-name]` - Create a new project.
-* `mkdocs serve` - Start the live-reloading docs server.
-* `mkdocs build` - Build the documentation site.
-* `mkdocs -h` - Print help message and exit.
+## Future Goals
 
-## Project layout
+- Adding a branch predictor for performance optimization.
+- Achieving compatibility with official RISC-V International test suites.
+- Implementing machine mode CSR (Control and Status Registers).
+- Providing documentation in both English and Turkish.
+- Supporting open-source ASIC synthesis for low-cost custom designs.
 
-    mkdocs.yml    # The configuration file.
-    docs/
-        index.md  # The documentation homepage.
-        ...       # Other markdown pages, images and other files.
+## Performance Highlights
+
+- **Core Configurations**: Available for RV32I, RV32IC, and RV32IMC.
+- **CoreMark/MHz**: 2.20 for RV32IMC configuration.
+- **Branch Prediction Accuracy**: Implements gshare with an 85% accuracy rate.
+
+## Learn More
+
+Visit the [GitHub repository](https://github.com/kerimturak/tcore-rv32imc) for the source code, implementation details, and contribution guidelines. This documentation will be continually updated as TCore evolves to meet its development goals.

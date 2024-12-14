@@ -7,7 +7,7 @@ TCORE is a simple core project based on the RISC-V architecture, supporting the 
 - Slow multiplication and division
 - UART
 # Architecture
-![alt text](./doc/CPU.svg)
+![alt text](./docs/CPU.svg)
 
 
 # Goal Checklist
