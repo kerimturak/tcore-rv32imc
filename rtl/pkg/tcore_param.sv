@@ -53,6 +53,19 @@ package tcore_param;
 
   localparam Mul_Type = 0;  // 1: dadda 0: wallace
 
+  typedef enum type { 
+    NO_EXC,
+    FETCH_FAULT,
+    ECALL,
+    EBREAK,
+    ILLEGAL_INSTRUCTION,
+    FETCH_MISALIGNED,
+    LOAD_MISALIGNED,
+    STORE_MISALIGNED,
+    LOAD_FAULT,
+    STORE_FAULT
+  } exc_type_e;
+
   typedef enum logic [2:0] {
     CSRRW  = 3'h1,
     CSRRS  = 3'h2,
@@ -135,6 +148,7 @@ package tcore_param;
     logic [XLEN-1:0] pc2;
     inst_t           inst;
     logic            is_comp;
+    exc_type_e       exc_type;
   } pipe1_t;
 
   typedef struct packed {
@@ -161,6 +175,7 @@ package tcore_param;
     logic            wr_csr;
     logic [11:0]     csr_idx;
     logic            csr_or_data;
+    exc_type_e       exc_type;
   } pipe2_t;
 
   typedef struct packed {
@@ -175,6 +190,7 @@ package tcore_param;
     logic [4:0]      rd_addr;
     logic [XLEN-1:0] alu_result;
     logic [XLEN-1:0] write_data;
+    exc_type_e       exc_type;
   } pipe3_t;
 
   typedef struct packed {
@@ -186,6 +202,7 @@ package tcore_param;
     logic [4:0]      rd_addr;
     logic [XLEN-1:0] alu_result;
     logic [XLEN-1:0] read_data;
+    exc_type_e       exc_type;
   } pipe4_t;
 
   typedef struct packed {

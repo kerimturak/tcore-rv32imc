@@ -53,6 +53,7 @@ module cpu
   logic          [XLEN-1:0] fe_inst;
   logic                     fe_is_comp;
   predict_info_t            fe_spec;
+  exc_type_e                fe_exc_type;
 
   // ------- decode logic ------
   pipe1_t                   pipe1;
@@ -107,16 +108,17 @@ module cpu
       .pc4_o        (fe_pc4),
       .inst_o       (fe_inst),
       .is_comp_o    (fe_is_comp),
-      .imiss_stall_o(fe_imiss_stall)
+      .imiss_stall_o(fe_imiss_stall),
+      .exc_type_o   (fe_exc_type)
   );
 
   //----------------------------------              decode             ---------------------------------------------
   always_ff @(posedge clk_i) begin
     if (!rst_ni || de_flush_en) begin
-      pipe1   <= '{default: 0};
+      pipe1   <= '{exc_type_e: NO_EXC, default: 0};
       de_spec <= '0;
     end else if (de_enable) begin
-      pipe1   <= '{pc      : fe_pc, pc4     : fe_pc4, pc2     : fe_pc2, inst    : fe_inst, is_comp : fe_is_comp};
+      pipe1   <= '{pc      : fe_pc, pc4     : fe_pc4, pc2     : fe_pc2, inst    : fe_inst, is_comp : fe_is_comp, exc_type: fe_exc_type};
       de_spec <= fe_spec;
     end
   end
@@ -144,7 +146,7 @@ module cpu
   //----------------------------------              execute             ---------------------------------------------
   always_ff @(posedge clk_i) begin
     if (!rst_ni || ex_flush_en) begin
-      pipe2   <= '{default: 0, alu_ctrl: OP_ADD, pc_sel: NO_BJ, rw_size: NO_SIZE};
+      pipe2   <= '{exc_type_e: NO_EXC, default: 0, alu_ctrl: OP_ADD, pc_sel: NO_BJ, rw_size: NO_SIZE};
       ex_spec <= '0;
     end else if (!stall_all) begin
       ex_spec <= de_spec;
@@ -171,7 +173,8 @@ module cpu
           r1_addr     : pipe1.inst.r1_addr,
           r2_addr     : pipe1.inst.r2_addr,
           rd_addr     : pipe1.inst.rd_addr,
-          imm         : de_imm
+          imm         : de_imm,
+          exc_type    : pipe1.exc_type
       };
     end
   end
@@ -222,7 +225,7 @@ module cpu
   //----------------------------------              memory             ---------------------------------------------
   always_ff @(posedge clk_i) begin
     if (!rst_ni) begin
-      pipe3 <= '{default: 0, rw_size: NO_SIZE};
+      pipe3 <= '{exc_type_e: NO_EXC, default: 0, rw_size: NO_SIZE};
     end else if (!stall_all) begin
       pipe3 <= '{
           pc4         : pipe2.pc4,
@@ -235,7 +238,8 @@ module cpu
           ld_op_sign  : pipe2.ld_op_sign,
           rd_addr     : pipe2.rd_addr,
           alu_result  : ex_alu_result,
-          write_data  : ex_wdata
+          write_data  : ex_wdata,
+          exc_type    : pipe2.exc_type
       };
     end
   end
@@ -261,7 +265,7 @@ module cpu
 `ifndef REMOVE_WB_STAGE
   always_ff @(posedge clk_i) begin
     if (!rst_ni) begin
-      pipe4 <= '{default: 0};
+      pipe4 <= '{exc_type_e: NO_EXC, default: 0};
     end else if (!stall_all) begin
       pipe4 <= '{
           pc4         : pipe3.pc4,
@@ -271,7 +275,8 @@ module cpu
           result_src  : pipe3.result_src,
           rd_addr     : pipe3.rd_addr,
           alu_result  : pipe3.alu_result,
-          read_data   : me_rdata
+          read_data   : me_rdata,
+          exc_type    : pipe3.exc_type
       };
     end
   end

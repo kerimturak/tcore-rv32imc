@@ -72,19 +72,22 @@ module cs_reg_file
     logic [12:11] mpp;
   } mstatus_t;
 
-  misa_t               misa;
   mstatus_t            mstatus;
-  logic     [XLEN-1:0] mie;
   logic     [XLEN-1:0] mtvec;
-  logic     [XLEN-1:0] mstratch;
-  logic     [XLEN-1:0] mepc;
-  logic     [XLEN-1:0] mcause;
-  logic     [XLEN-1:0] mtval;
   logic     [XLEN-1:0] mip;
-  logic     [XLEN-1:0] mcycle;
+  logic     [XLEN-1:0] mie;
+    logic     [XLEN-1:0] mcycle;
   logic     [XLEN-1:0] mcycleh;
   logic     [XLEN-1:0] minstret;
   logic     [XLEN-1:0] minstreth;
+  logic     [XLEN-1:0] mstratch;
+  logic     [XLEN-1:0] mepc;
+  logic     [XLEN-1:0] mcause;
+
+  misa_t               misa;
+  logic     [XLEN-1:0] mtval;
+
+
   logic                mcountinhibit;
 
   always_ff @(posedge clk_i) begin

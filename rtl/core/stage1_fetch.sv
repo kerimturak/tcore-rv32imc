@@ -40,7 +40,8 @@ module stage1_fetch
     output logic          [XLEN-1:0] pc2_o,
     output logic          [XLEN-1:0] inst_o,
     output logic                     imiss_stall_o,
-    output logic                     is_comp_o
+    output logic                     is_comp_o,
+    output exc_type_e                exc_type_o
 );
 
   logic                   fetch_valid;
@@ -55,6 +56,7 @@ module stage1_fetch
   icache_res_t            icache_res;
   icache_req_t            icache_req;
   logic                   illegal_instr;
+  logic                   grand;
 
   always_ff @(posedge clk_i) begin
     if (!rst_ni) begin
@@ -71,6 +73,13 @@ module stage1_fetch
     pc4_o         = 32'd4 + pc_o;
     pc2_o         = 32'd2 + pc_o;
     buff_req      = '{valid    : fetch_valid, ready    : 1, addr     : pc_o, uncached : uncached};
+    if (!grand) begin
+      exc_type_o = FETCH_FAULT;
+    end else if (illegal_instr) begin
+      exc_type_o = ILLEGAL_INSTRUCTION;
+    end else begin
+      exc_type_o = NO_EXC;
+    end
   end
 
   always_comb begin
@@ -84,13 +93,14 @@ module stage1_fetch
   pma ipma (
       .addr_i     (pc_o),
       .uncached_o (uncached),
-      .memregion_o(memregion)  // unused now
+      .memregion_o(memregion),  // unused now
+      .grand_o    (grand)
   );
 
   `ifdef STATIC_PREDICT
     t_branch_predict
   `else
-    t_gshare 
+    t_gshare
   `endif
     branch_prediction (
       .clk_i        (clk_i),
