@@ -94,6 +94,11 @@ module control_unit
   logic CSR_RSI;  // 
   logic CSR_RCI;  // 
 
+  logic ecall;
+  logic ebreak;
+  logic mret;
+  logic illegal_shift;
+
   always_comb begin
     r_add              = (inst_i.opcode == op_r_type) && (inst_i.funct3 == 3'd0) && (inst_i.funct7[5] == 1'b0) && (inst_i.funct7[0] == 1'b0);
     r_sub              = (inst_i.opcode == op_r_type) && (inst_i.funct3 == 3'd0) && (inst_i.funct7[5] == 1'b1) && (inst_i.funct7[0] == 1'b0);
@@ -147,6 +152,19 @@ module control_unit
     CSR_RWI            = (inst_i.opcode == system) && inst_i.funct3 == 3'd5;
     CSR_RSI            = (inst_i.opcode == system) && inst_i.funct3 == 3'd6;
     CSR_RCI            = (inst_i.opcode == system) && inst_i.funct3 == 3'd7;
+
+    ecall              = (inst_i.opcode == system) && inst_i[21:20] == 2'd0;
+    ebreak             = (inst_i.opcode == system) && inst_i[21:20] == 2'd1;
+    mret               = (inst_i.opcode == system) && inst_i[21:20] == 2'd2;
+
+    illegal_shift = (r_sll || i_srli || r_sra) && inst_i[25];
+  
+    ctrl_o.exc_type = NO_EXCEPTION;
+    case (1'b1)
+      ecall         : ctrl_o.exc_type = ECALL; 
+      ebreak        : ctrl_o.exc_type = EBREAK; 
+      illegal_shift : ctrl_o.exc_type = ILLEGAL_INSTRUCTION;
+    endcase
 
     ctrl_o.alu_in1_sel = u_auipc ? 2'd2 : (i_jalr ? 2'b1 : 2'b0);
 

@@ -37,15 +37,17 @@ module pma
     logic [XLEN-1:0] mask;
     logic uncached;
     logic memregion;
-    logic x,
+    logic x;
+    logic w;
+    logic r;
   } pma_t;
 
   logic [2:0] region_match;
 
   localparam pma_t [2:0] pma_map = '{
-      '{addr : 32'h4000_0000, mask: 32'h000F_FFFF, uncached: 1'b0, memregion: 1'b1, x = 1'b1, w= 1'b1, r= 1'b1},  // Memregion
-      '{addr : 32'h2000_0000, mask: 32'h0000_000F, uncached: 1'b0, memregion: 1'b0, x = 1'b0, w= 1'b1, r= 1'b1},  // Uart
-      '{addr : 32'h3000_0000, mask: 32'h0000_0007, uncached: 1'b1, memregion: 1'b1, x = 1'b0, w= 1'b0, r= 1'b1}  // Timer
+      '{addr : 32'h4000_0000, mask: 32'h000F_FFFF, uncached: 1'b0, memregion: 1'b1, x : 1'b1, w : 1'b1, r : 1'b1},  // Memregion
+      '{addr : 32'h2000_0000, mask: 32'h0000_000F, uncached: 1'b0, memregion: 1'b0, x : 1'b0, w : 1'b1, r : 1'b1},  // Uart
+      '{addr : 32'h3000_0000, mask: 32'h0000_0007, uncached: 1'b1, memregion: 1'b1, x : 1'b0, w : 1'b0, r : 1'b1}  // Timer
   };
 
   logic [XLEN-1:0] not_mask    [2:0];

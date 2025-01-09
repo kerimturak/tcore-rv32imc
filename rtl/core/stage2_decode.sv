@@ -37,21 +37,21 @@ module stage2_decode
     output logic  [XLEN-1:0] r1_data_o,
     output logic  [XLEN-1:0] r2_data_o,
     output ctrl_t            ctrl_o,
-    output logic  [XLEN-1:0] imm_o
+    output logic  [XLEN-1:0] imm_o,
+    output exc_type_e        exc_type_o
+
 );
 
   logic [XLEN-1:0] r1_data;
   logic [XLEN-1:0] r2_data;
 
   always_comb begin
-    r1_data_o = fwd_a_i ? wb_data_i : r1_data;
-    r2_data_o = fwd_b_i ? wb_data_i : r2_data;
+    r1_data_o  = fwd_a_i ? wb_data_i : r1_data;
+    r2_data_o  = fwd_b_i ? wb_data_i : r2_data;
+    exc_type_o = ctrl_o.exc_type;
   end
 
   control_unit control_unit (
-      //.op_i    (inst_i.opcode),
-      //.funct3_i(inst_i.funct3),
-      //.funct7_i(inst_i.funct7),
       .inst_i(inst_i),
       .ctrl_o  (ctrl_o)
   );

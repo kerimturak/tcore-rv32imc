@@ -33,6 +33,7 @@ module stage1_fetch
     input  ilowX_res_t               lx_ires_i,
     input  logic          [XLEN-1:0] pc_target_i,
     input  logic                     spec_hit_i,
+    input  logic          [XLEN-1:0] wb_pc_i,
     output predict_info_t            spec_o,
     output ilowX_req_t               lx_ireq_o,
     output logic          [XLEN-1:0] pc_o,
@@ -73,12 +74,15 @@ module stage1_fetch
     pc4_o         = 32'd4 + pc_o;
     pc2_o         = 32'd2 + pc_o;
     buff_req      = '{valid    : fetch_valid, ready    : 1, addr     : pc_o, uncached : uncached};
-    if (!grand) begin
-      exc_type_o = FETCH_FAULT;
+
+    if (pc_o[0] ) begin
+      exc_type_o = INSTR_MISALIGNED;
+    end else if (!grand) begin
+      exc_type_o = INSTR_ACCESS_FAULT;
     end else if (illegal_instr) begin
       exc_type_o = ILLEGAL_INSTRUCTION;
     end else begin
-      exc_type_o = NO_EXC;
+      exc_type_o = NO_EXCEPTION;
     end
   end
 
