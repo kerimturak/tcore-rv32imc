@@ -50,13 +50,8 @@ module pma
       '{addr : 32'h3000_0000, mask: 32'h0000_0007, uncached: 1'b1, memregion: 1'b1, x : 1'b0, w : 1'b0, r : 1'b1}  // Timer
   };
 
-  logic [XLEN-1:0] not_mask    [2:0];
-  logic [XLEN-1:0] not_mask_and[2:0];
-
   for (genvar i = 0; i < 3; i++) begin
     assign region_match[i] = pma_map[i].addr == (addr_i & ~pma_map[i].mask);
-    assign not_mask[i] = ~pma_map[i].mask;
-    assign not_mask_and[i] = addr_i & ~pma_map[i].mask;
   end
 
   always_comb begin
@@ -74,7 +69,7 @@ module pma
     end else if (region_match[2]) begin
       uncached_o  = pma_map[2].uncached;
       memregion_o = pma_map[2].memregion;
-      grand_o     = pma_map[1].x;
+      grand_o     = pma_map[2].x;
     end
 
   end

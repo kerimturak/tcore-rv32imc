@@ -85,6 +85,7 @@ module cpu
   predict_info_t            ex_spec;
   logic                     ex_spec_hit;
   exc_type_e                ex_exc_type;
+  exc_type_e                alu_exc_type;
 
   // ------- memory logic ------
   pipe3_t                   pipe3;
@@ -123,7 +124,7 @@ module cpu
       pipe1   <= '{exc_type_e: NO_EXCEPTION, default: 0};
       de_spec <= '0;
     end else if (de_enable) begin
-      pipe1   <= '{pc      : fe_pc, pc4     : fe_pc4, pc2     : fe_pc2, inst    : fe_inst, is_comp : fe_is_comp, fe_exc_type: fe_exc_type};
+      pipe1   <= '{pc      : fe_pc, pc4     : fe_pc4, pc2     : fe_pc2, inst    : fe_inst, is_comp : fe_is_comp, exc_type: fe_exc_type};
       de_spec <= fe_spec;
     end
   end
@@ -140,6 +141,7 @@ module cpu
       .fwd_b_i    (de_fwd_b),
       .wb_data_i  (wb_data),
       .inst_i     (pipe1.inst),
+      .exc_type_i (pipe1.exc_type),
       .rd_addr_i  (pipe4.rd_addr),
       .rf_rw_en_i (wb_rf_rw),
       .r1_data_o  (de_r1_data),
@@ -154,7 +156,6 @@ module cpu
     if (!rst_ni || ex_flush_en) begin
       pipe2   <= '{exc_type_e: NO_EXCEPTION, default: 0, alu_ctrl: OP_ADD, pc_sel: NO_BJ, rw_size: NO_SIZE};
       ex_spec <= '0;
-      ex_exc_type <= NO_EXCEPTION;
     end else if (!stall_all) begin
       ex_spec <= de_spec;
       pipe2 <= '{
@@ -181,25 +182,29 @@ module cpu
           r2_addr     : pipe1.inst.r2_addr,
           rd_addr     : pipe1.inst.rd_addr,
           imm         : de_imm,
-          fe_exc_type : pipe1.fe_exc_type,
-          de_exc_type : de_exc_type
+          exc_type    : de_exc_type
       };
-      if (de_ctrl.rw_size != NO_SIZE) begin
+    end
+  end
+
+  always_comb begin
+      if (alu_exc_type == INSTR_MISALIGNED) begin
+        ex_exc_type = INSTR_MISALIGNED;
+      end else if (de_ctrl.rw_size != NO_SIZE) begin
         if (de_ctrl.wr_en) begin
           unique case (de_ctrl.rw_size)
-            HALF_WORD: ex_exc_type <= ex_alu_result[1] ? STORE_MISALIGNED : NO_EXCEPTION;
-            WORD:      ex_exc_type <= ex_alu_result[1] | ex_alu_result[0] ? STORE_MISALIGNED : NO_EXCEPTION;
-            default:   ex_exc_type <= NO_EXCEPTION;
+            HALF_WORD: ex_exc_type = ex_alu_result[1] ? STORE_MISALIGNED : NO_EXCEPTION;
+            WORD:      ex_exc_type = ex_alu_result[1] | ex_alu_result[0] ? STORE_MISALIGNED : NO_EXCEPTION;
+            default:   ex_exc_type = NO_EXCEPTION;
           endcase
         end else begin
           unique case (de_ctrl.rw_size)
-            HALF_WORD: ex_exc_type <= ex_alu_result[1] ? LOAD_MISALIGNED : NO_EXCEPTION;
-            WORD:      ex_exc_type <= ex_alu_result[1] | ex_alu_result[0] ? LOAD_MISALIGNED : NO_EXCEPTION;
-            default:   ex_exc_type <= NO_EXCEPTION;
+            HALF_WORD: ex_exc_type = ex_alu_result[1] ? LOAD_MISALIGNED : NO_EXCEPTION;
+            WORD:      ex_exc_type = ex_alu_result[1] | ex_alu_result[0] ? LOAD_MISALIGNED : NO_EXCEPTION;
+            default:   ex_exc_type = NO_EXCEPTION;
           endcase
         end
       end
-    end
   end
 
   stage3_execution execution (
@@ -224,11 +229,13 @@ module cpu
       .imm_i        (pipe2.imm),
       .pc_sel_i     (pipe2.pc_sel),
       .alu_ctrl_i   (pipe2.alu_ctrl),
+      .exc_type_i   (pipe2.exc_type),
       .write_data_o (ex_wdata),
       .pc_target_o  (ex_pc_target),
       .alu_result_o (ex_alu_result),
       .pc_sel_o     (ex_pc_sel),
-      .alu_stall_o  (ex_alu_stall)
+      .alu_stall_o  (ex_alu_stall),
+      .exc_type_o   (alu_exc_type)
   );
 
   always_comb begin
@@ -262,9 +269,7 @@ module cpu
           rd_addr     : pipe2.rd_addr,
           alu_result  : ex_alu_result,
           write_data  : ex_wdata,
-          fe_exc_type : pipe2.fe_exc_type,
-          de_exc_type : pipe2.de_exc_type,
-          ex_exc_type : ex_exc_type
+          exc_type    : ex_exc_type
       };
     end
   end
@@ -301,9 +306,7 @@ module cpu
           rd_addr     : pipe3.rd_addr,
           alu_result  : pipe3.alu_result,
           read_data   : me_rdata,
-          fe_exc_type : pipe3.fe_exc_type,
-          de_exc_type : pipe3.de_exc_type,
-          ex_exc_type : pipe3.ex_exc_type
+          exc_type    : pipe3.exc_type
       };
     end
   end
@@ -334,9 +337,7 @@ module cpu
       .rf_rw_en_o    (wb_rf_rw),
       .wb_pc_o       (wb_pc),
       .wb_data_o     (wb_data),
-      .fe_exc_type_i (pipe4.fe_exc_type),
-      .de_exc_type_i (pipe4.de_exc_type),
-      .ex_exc_type_i (pipe4.ex_exc_type)
+      .exc_type_i    (pipe4.exc_type)
   );
 
   //----------------------------------              Multiple-Stage         ---------------------------------------------

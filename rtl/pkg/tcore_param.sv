@@ -148,7 +148,7 @@ package tcore_param;
     logic [XLEN-1:0] pc2;
     inst_t           inst;
     logic            is_comp;
-    exc_type_e       fe_exc_type;
+    exc_type_e       exc_type;
   } pipe1_t;
 
   typedef struct packed {
@@ -175,8 +175,7 @@ package tcore_param;
     logic            wr_csr;
     logic [11:0]     csr_idx;
     logic            csr_or_data;
-    exc_type_e       fe_exc_type;
-    exc_type_e       de_exc_type;
+    exc_type_e       exc_type;
   } pipe2_t;
 
   typedef struct packed {
@@ -191,9 +190,7 @@ package tcore_param;
     logic [4:0]      rd_addr;
     logic [XLEN-1:0] alu_result;
     logic [XLEN-1:0] write_data;
-    exc_type_e       fe_exc_type;
-    exc_type_e       de_exc_type;
-    exc_type_e       ex_exc_type;
+    exc_type_e       exc_type;
   } pipe3_t;
 
   typedef struct packed {
@@ -206,9 +203,6 @@ package tcore_param;
     logic [XLEN-1:0] alu_result;
     logic [XLEN-1:0] read_data;
     exc_type_e       exc_type;
-    exc_type_e       fe_exc_type;
-    exc_type_e       de_exc_type;
-    exc_type_e       ex_exc_type;
   } pipe4_t;
 
   typedef struct packed {

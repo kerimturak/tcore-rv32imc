@@ -68,16 +68,14 @@ module stage1_fetch
   end
 
   always_comb begin
-    fetch_valid   = 1'b1;
+    fetch_valid   = ~(!grand || illegal_instr); // || trap
     pc_en         = !(stall_i || fe_stall_i);
     imiss_stall_o = (fetch_valid && !buff_res.valid || buffer_miss);
     pc4_o         = 32'd4 + pc_o;
     pc2_o         = 32'd2 + pc_o;
     buff_req      = '{valid    : fetch_valid, ready    : 1, addr     : pc_o, uncached : uncached};
 
-    if (pc_o[0] ) begin
-      exc_type_o = INSTR_MISALIGNED;
-    end else if (!grand) begin
+    if (!grand) begin
       exc_type_o = INSTR_ACCESS_FAULT;
     end else if (illegal_instr) begin
       exc_type_o = ILLEGAL_INSTRUCTION;

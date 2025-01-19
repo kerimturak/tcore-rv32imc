@@ -116,7 +116,7 @@ module cs_reg_file
         MSCRATCH:      mstratch <= csr_wdata_i;
         MEPC:          mepc <= csr_wdata_i;
         MCAUSE:        mcause <= csr_wdata_i;
-        MTVAL:         mtval <= csr_wdata_i;
+        //MTVAL:         mtval <= csr_wdata_i;
       endcase
     end
   end
@@ -136,7 +136,7 @@ module cs_reg_file
         MSCRATCH: csr_rdata_o = mstratch;
         MEPC:     csr_rdata_o = mepc;
         MCAUSE:   csr_rdata_o = mcause;
-        MTVAL:    csr_rdata_o = mtval;
+        //MTVAL:    csr_rdata_o = mtval;
         default:  csr_rdata_o = '0;
       endcase
     end else begin

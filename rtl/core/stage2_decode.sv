@@ -34,6 +34,8 @@ module stage2_decode
     input  logic  [XLEN-1:0] wb_data_i,
     input  logic  [     4:0] rd_addr_i,
     input  logic             rf_rw_en_i,
+    input exc_type_e         exc_type_i,
+
     output logic  [XLEN-1:0] r1_data_o,
     output logic  [XLEN-1:0] r2_data_o,
     output ctrl_t            ctrl_o,
@@ -48,7 +50,7 @@ module stage2_decode
   always_comb begin
     r1_data_o  = fwd_a_i ? wb_data_i : r1_data;
     r2_data_o  = fwd_b_i ? wb_data_i : r2_data;
-    exc_type_o = ctrl_o.exc_type;
+    exc_type_o = ctrl_o.exc_type == NO_EXCEPTION ? exc_type_i : ctrl_o.exc_type;
   end
 
   control_unit control_unit (
