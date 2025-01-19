@@ -69,6 +69,8 @@ module stage1_fetch
   end
 
   always_comb begin
+    fetch_valid   = ~(|exc_array_i[3:0]); // || trap
+
     if (!grand && fetch_valid) begin
       exc_type_o = INSTR_ACCESS_FAULT;
     end else if (illegal_instr && fetch_valid) begin
@@ -77,7 +79,6 @@ module stage1_fetch
       exc_type_o = NO_EXCEPTION;
     end
 
-    fetch_valid   = ~(|exc_array_i[3:0]); // || trap
     pc_en         = !(stall_i || fe_stall_i);
     imiss_stall_o = (fetch_valid && !buff_res.valid || buffer_miss);
     pc4_o         = 32'd4 + pc_o;

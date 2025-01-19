@@ -32,9 +32,16 @@ module cs_reg_file
     input  logic            wr_en_i,
     input  logic [    11:0] csr_idx_i,
     input  logic [XLEN-1:0] csr_wdata_i,
-    output logic [XLEN-1:0] csr_rdata_o
+    output logic [XLEN-1:0] csr_rdata_o,
+    input  logic               trap_active_i,
+    input  logic    [XLEN-1:0] trap_cause_i,
+    input  logic    [XLEN-1:0] trap_mepc_i
 );
 
+  logic go_to_trap;
+  logic go_to_trap_q;
+  logic return_trap;
+  logic return_trap_q;
 
   localparam MSTATUS = 12'h300;
   localparam MTVEC = 12'h305;
@@ -57,15 +64,15 @@ module cs_reg_file
   //} misa_t;
 
                //mcause codes
-    localparam MACHINE_SOFTWARE_INTERRUPT =3,
-               MACHINE_TIMER_INTERRUPT = 7,
-               MACHINE_EXTERNAL_INTERRUPT = 11,
-               INSTRUCTION_ADDRESS_MISALIGNED = 0,
-               ILLEGAL_INSTRUCTION = 2,
-               EBREAK = 3,
-               LOAD_ADDRESS_MISALIGNED = 4,
-               STORE_ADDRESS_MISALIGNED = 6,
-               ECALL = 11;
+  localparam MACHINE_SOFTWARE_INTERRUPT =3,
+             MACHINE_TIMER_INTERRUPT = 7,
+             MACHINE_EXTERNAL_INTERRUPT = 11,
+             INSTRUCTION_ADDRESS_MISALIGNED = 0,
+             ILLEGAL_INSTRUCTION = 2,
+             EBREAK = 3,
+             LOAD_ADDRESS_MISALIGNED = 4,
+             STORE_ADDRESS_MISALIGNED = 6,
+             ECALL = 11;
 
   typedef struct packed {
     logic [3] mie;
@@ -86,6 +93,11 @@ module cs_reg_file
   logic     [XLEN-1:0] mcause;
   //misa_t               misa;
 
+  always_comb begin
+    go_to_trap = trap_active_i;
+    return_trap = mepc;
+  end
+
   always_ff @(posedge clk_i) begin
     if (!rst_ni) begin
       mstatus <= '0;
@@ -102,22 +114,30 @@ module cs_reg_file
       //misa.extensions <= 32'b0 | (1'b1 << 2) | (1'b1 << 8) | (1'b1 << 12);
       //misa.nonimp <= '0;
       //misa.mxl <= 'b1;
-    end else if (wr_en_i) begin
-      case (csr_idx_i)
-        //MISA:          misa <= csr_wdata_i;
-        MSTATUS:       mstatus <= csr_wdata_i;
-        MTVEC:         mtvec <= csr_wdata_i;
-        MIE:           mie <= csr_wdata_i;
-        MIP:           mip <= csr_wdata_i;
-        MCYCLE:        mcycle <= csr_wdata_i;
-        MCYCLEH:       mcycleh <= csr_wdata_i;
-        MINSTRET:      minstret <= csr_wdata_i;
-        MINSTRETH:     minstreth <= csr_wdata_i;
-        MSCRATCH:      mstratch <= csr_wdata_i;
-        MEPC:          mepc <= csr_wdata_i;
-        MCAUSE:        mcause <= csr_wdata_i;
-        //MTVAL:         mtval <= csr_wdata_i;
-      endcase
+    end else begin
+      if (trap_active_i) begin
+        mepc <= trap_mepc_i;
+        mcause <= trap_cause_i;
+        mstatus.mie <= '0;
+        mstatus.mpie <= mstatus.mie;
+        mstatus.mpp <= 2'b11;
+      end else if (wr_en_i) begin
+        case (csr_idx_i)
+          //MISA:          misa <= csr_wdata_i;
+          MSTATUS:       mstatus <= csr_wdata_i;
+          MTVEC:         mtvec <= csr_wdata_i;
+          MIE:           mie <= csr_wdata_i;
+          MIP:           mip <= csr_wdata_i;
+          MCYCLE:        mcycle <= csr_wdata_i;
+          MCYCLEH:       mcycleh <= csr_wdata_i;
+          MINSTRET:      minstret <= csr_wdata_i;
+          MINSTRETH:     minstreth <= csr_wdata_i;
+          MSCRATCH:      mstratch <= csr_wdata_i;
+          MEPC:          mepc <= csr_wdata_i;
+          MCAUSE:        mcause <= csr_wdata_i;
+          //MTVAL:         mtval <= csr_wdata_i;
+        endcase
+      end
     end
   end
 

@@ -41,6 +41,9 @@ module stage3_execution
     input  logic    [    11:0] csr_idx_i,
     input  logic               csr_or_data_i,
     input  logic               is_comp_i,
+    input  logic               trap_active_i,
+    input  logic    [XLEN-1:0] trap_cause_i,
+    input  logic    [XLEN-1:0] trap_mepc_i,
     input  logic    [XLEN-1:0] pc_i,
     input  logic    [XLEN-1:0] pc2_i,
     input  logic    [XLEN-1:0] pc4_i,
@@ -119,6 +122,9 @@ module stage3_execution
       .wr_en_i    (wr_csr_i),
       .csr_idx_i  (csr_idx_i),
       .csr_wdata_i(alu_result),
-      .csr_rdata_o(csr_rdata)
+      .csr_rdata_o(csr_rdata),
+      .trap_active_i(trap_active_i),
+      .trap_cause_i (trap_cause_i ),
+      .trap_mepc_i  (trap_mepc_i  )
   );
 endmodule

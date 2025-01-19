@@ -97,6 +97,9 @@ module cpu
   logic          [XLEN-1:0] wb_pc;
   logic          [XLEN-1:0] wb_data;
 
+  logic            wb_trap_active;
+  logic [XLEN-1:0] wb_trap_cause;
+  logic [XLEN-1:0] wb_trap_mepc;
   //----------------------------------              fetch             ---------------------------------------------
   logic [4:0] exc_array;
   logic  priority_flush;
@@ -224,9 +227,16 @@ module cpu
       .r2_data_i    (pipe2.r2_data),
       .alu_in1_sel_i(pipe2.alu_in1_sel),
       .alu_in2_sel_i(pipe2.alu_in2_sel),
+
+
+      .trap_active_i(wb_trap_active),
+      .trap_cause_i (wb_trap_cause),
+      .trap_mepc_i  (wb_trap_mepc),
+
       .rd_csr_i     (pipe2.rd_csr & !stall_all),
       .wr_csr_i     (pipe2.wr_csr & !stall_all),
       .csr_idx_i    (pipe2.csr_idx),
+
       .is_comp_i    (pipe2.is_comp),
       .csr_or_data_i(pipe2.csr_or_data),
       .pc_i         (pipe2.pc),
@@ -343,7 +353,10 @@ module cpu
       .rf_rw_en_o    (wb_rf_rw),
       .wb_pc_o       (wb_pc),
       .wb_data_o     (wb_data),
-      .exc_type_i    (pipe4.exc_type)
+      .exc_type_i    (pipe4.exc_type),
+      .trap_cause_o  (wb_trap_cause),
+      .trap_active_o (wb_trap_active),
+      .trap_mepc_o   (wb_trap_mepc)
   );
 
   //----------------------------------              Multiple-Stage         ---------------------------------------------
