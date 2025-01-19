@@ -98,6 +98,9 @@ module cpu
   logic          [XLEN-1:0] wb_data;
 
   //----------------------------------              fetch             ---------------------------------------------
+  logic [4:0] exc_array;
+  logic  priority_flush;
+
   stage1_fetch fetch (
       .clk_i        (clk_i),
       .rst_ni       (rst_ni),
@@ -107,6 +110,7 @@ module cpu
       .pc_target_i  (ex_pc_target_last),
       .spec_hit_i   (ex_spec_hit),
       .wb_pc_i      (wb_pc),
+      .exc_array_i  (exc_array),
       .spec_o       (fe_spec),
       .lx_ireq_o    (lx_ireq),
       .pc_o         (fe_pc),
@@ -131,7 +135,7 @@ module cpu
 
   always_comb begin
     de_enable   = !(stall_all || de_stall);
-    de_flush_en = stall_all ? 1'b0 : de_flush;
+    de_flush_en = priority_flush ? 1'b0 : stall_all ? 1'b0 : de_flush;
   end
 
   stage2_decode decode (
@@ -188,8 +192,8 @@ module cpu
   end
 
   always_comb begin
-      if (alu_exc_type == INSTR_MISALIGNED) begin
-        ex_exc_type = INSTR_MISALIGNED;
+      if (alu_exc_type != NO_EXCEPTION) begin
+        ex_exc_type = alu_exc_type;
       end else if (de_ctrl.rw_size != NO_SIZE) begin
         if (de_ctrl.wr_en) begin
           unique case (de_ctrl.rw_size)
@@ -204,6 +208,8 @@ module cpu
             default:   ex_exc_type = NO_EXCEPTION;
           endcase
         end
+      end else begin
+        ex_exc_type = NO_EXCEPTION;
       end
   end
 
@@ -250,7 +256,7 @@ module cpu
     end
   end
 
-  assign ex_flush_en = stall_all ? 1'b0 : ex_flush;
+  assign ex_flush_en = priority_flush ? 1'b0 : stall_all ? 1'b0 : ex_flush;
 
   //----------------------------------              memory             ---------------------------------------------
   always_ff @(posedge clk_i) begin
@@ -353,6 +359,7 @@ module cpu
       .rf_rw_me_i   (pipe3.rf_rw_en),
       .rf_rw_wb_i   (pipe4.rf_rw_en),
       .rd_addr_wb_i (pipe4.rd_addr),
+      .exc_array_i  (exc_array),
       .stall_fe_o   (fe_stall),
       .stall_de_o   (de_stall),
       .flush_de_o   (de_flush),
@@ -381,6 +388,14 @@ module cpu
     iomem_wstrb = mem_req.rw;
     iomem_wdata = mem_req.data;
     stall_all   = fe_imiss_stall || me_dmiss_stall || ex_alu_stall;
+    exc_array = '0;
+    exc_array = {pipe4.exc_type != NO_EXCEPTION, pipe3.exc_type!= NO_EXCEPTION, ex_exc_type!= NO_EXCEPTION, de_exc_type!= NO_EXCEPTION, fe_exc_type!= NO_EXCEPTION};
+
+    priority_flush = '0;
+
+    if (|exc_array[3:0]) begin // memory exception
+      priority_flush = '1;
+    end 
   end
 
 endmodule

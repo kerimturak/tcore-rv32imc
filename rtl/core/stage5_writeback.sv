@@ -38,14 +38,14 @@ module stage5_writeback
     output logic [XLEN-1:0] wb_data_o,
     output logic [XLEN-1:0] wb_pc_o,
     output logic            trap_active_o,
-    input logic             exc_type_i
+    input  exc_type_e       exc_type_i
 );
 
   always_comb begin
     rf_rw_en_o = rf_rw_en_i && !stall_i;
     wb_data_o  = data_sel_i[1] ? (is_comp_i ? pc2_i : pc4_i) : (data_sel_i[0] ? read_data_i : alu_result_i);
     trap_active_o = '0;
-    if (exc_type_i) begin
+    if (exc_type_i != NO_EXCEPTION) begin
       trap_active_o = '1;
     end
   end
