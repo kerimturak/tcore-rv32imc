@@ -72,12 +72,13 @@ module stage4_memory
       .memregion_o(memregion)      // unused now
   );
 
-  dcache dcache (
+  cache #(.cache_req_t(dcache_req_t), .cache_res_t(dcache_res_t), .lowX_req_t(dlowX_req_t), .lowX_res_t(dlowX_res_t), .CACHE_SIZE(DC_CAPACITY), .BLK_SIZE(BLK_SIZE), .XLEN(XLEN), .NUM_WAY(DC_WAY))
+  dcache (
       .clk_i        (clk_i),
       .rst_ni       (rst_ni),
       .cache_req_i  (dcache_req),
       .cache_res_o  (dcache_res),
-      .dcache_miss_o(dcache_miss),
+      .cache_miss_o (dcache_miss),
       .lowX_res_i   (lx_dres_i),
       .lowX_req_o   (lx_dreq_o)
   );

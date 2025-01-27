@@ -144,33 +144,21 @@ module icache #(
       cache_valid_vec[i] = cache_rd_tag[i][TAG_SIZE];
       cache_hit_vec[i]   = cache_rd_tag[i][TAG_SIZE-1:0] == addr_q[XLEN-1 : IDX_WIDTH+BOFFSET];
     end
-
     cache_wr_tag = flush ? '0 : {1'b1, addr_q[XLEN-1 : IDX_WIDTH+BOFFSET]};
     cache_wr_node = flush ? '0 : updated_node;
-
     cache_select_data = '0;
     for (int i = 0; i < NUM_WAY; i++) begin
       if (cache_hit_vec[i]) cache_select_data = data_rd_line[i];
     end
-
     rd_idx    = cache_req_i.addr[IDX_WIDTH + BOFFSET-1:BOFFSET];
     wr_idx    = flush ? flush_index : addr_q[IDX_WIDTH + BOFFSET-1:BOFFSET];
-
     cache_miss = cpu_valid_q && !flush && !(|(cache_valid_vec & cache_hit_vec));
     cache_hit  = cpu_valid_q && !flush &&  (|(cache_valid_vec & cache_hit_vec));
-
-
-
-
     cache_wr_en = cache_miss && lowX_res_i.valid && !uncached_q || flush;
     node_wr_en = cache_wr_en || cache_hit ;
     for (int i = 0; i < NUM_WAY; i++) data_write_way[i] = evict_way[i] && cache_wr_en;
     for (int i = 0; i < NUM_WAY; i++) tag_write_way[i] = flush ? '1 : evict_way[i] && cache_wr_en;
-  
     cache_idx = cache_wr_en ? wr_idx : rd_idx;
-
-
-
   end
 
   always_comb begin
