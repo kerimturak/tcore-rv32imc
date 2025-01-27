@@ -159,15 +159,18 @@ module icache #(
     cache_miss = cpu_valid_q && !flush && !(|(cache_valid_vec & cache_hit_vec));
     cache_hit  = cpu_valid_q && !flush &&  (|(cache_valid_vec & cache_hit_vec));
 
+
+
+
     cache_wr_en = cache_miss && lowX_res_i.valid && !uncached_q || flush;
+    node_wr_en = cache_wr_en || cache_hit ;
+    for (int i = 0; i < NUM_WAY; i++) data_write_way[i] = evict_way[i] && cache_wr_en;
+    for (int i = 0; i < NUM_WAY; i++) tag_write_way[i] = flush ? '1 : evict_way[i] && cache_wr_en;
+  
     cache_idx = cache_wr_en ? wr_idx : rd_idx;
 
-    node_wr_en = cache_wr_en || cache_hit ;
 
-    tag_write_way  = '0;
-    data_write_way = '0;
-    for (int i = 0; i < NUM_WAY; i++) tag_write_way[i] = flush ? '1 : evict_way[i] && cache_wr_en;
-    for (int i = 0; i < NUM_WAY; i++) data_write_way[i] = evict_way[i] && cache_wr_en;
+
   end
 
   always_comb begin
