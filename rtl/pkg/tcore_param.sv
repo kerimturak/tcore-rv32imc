@@ -188,19 +188,19 @@ package tcore_param;
   typedef struct packed {
     logic                valid;
     logic                ready;
-    logic [BLK_SIZE-1:0] blk;
+    logic [BLK_SIZE-1:0] data;
   } icache_res_t;
 
   typedef struct packed {
     logic        valid;
     logic        ready;
-    logic [31:0] blk;
+    logic [31:0] data;
   } gbuff_res_t;
 
   typedef struct packed {
     logic                valid;
     logic                ready;
-    logic [BLK_SIZE-1:0] blk;
+    logic [BLK_SIZE-1:0] data;
   } ilowX_res_t;
 
   typedef struct packed {

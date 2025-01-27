@@ -130,7 +130,7 @@ module stage1_fetch
   );
 
   riscv_compressed_decoder compressed_decoder (
-      .instr_i        (buff_res.blk),
+      .instr_i        (buff_res.data),
       .instr_o        (inst_o),
       .is_compressed_o(is_comp_o),
       .illegal_instr_o(illegal_instr)

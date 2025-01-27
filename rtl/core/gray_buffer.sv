@@ -134,8 +134,8 @@ module gray_align_buffer
 
   for (genvar i = 0; i < BLK_SIZE / 32; i++) begin
     always_comb begin
-      even.wr_parcel[i] = lowX_res_i.blk[i*32+:16];
-      odd.wr_parcel[i]  = lowX_res_i.blk[(2*i+1)*16+:16];
+      even.wr_parcel[i] = lowX_res_i.data[i*32+:16];
+      odd.wr_parcel[i]  = lowX_res_i.data[(2*i+1)*16+:16];
       even.rd_parcel[i] = ebram[i][even.rd_idx];
       odd.rd_parcel[i]  = obram[i][odd.rd_idx];
     end
@@ -163,26 +163,26 @@ module gray_align_buffer
     parcel_idx = unalign ? 0 : {2'b0, word_sel};
     even.parcel = unalign ? even.rd_parcel[0] : even.rd_parcel[parcel_idx+buff_req_i.addr[1]];
     odd.parcel = odd.rd_parcel[word_sel];
-    odd.deviceX_parcel = lowX_res_i.blk[(word_sel+1)*32-:16];
-    even.deviceX_parcel = unalign ? lowX_res_i.blk[15 : 0] : lowX_res_i.blk[(word_sel+1)*32-:16];
+    odd.deviceX_parcel = lowX_res_i.data[(word_sel+1)*32-:16];
+    even.deviceX_parcel = unalign ? lowX_res_i.data[15 : 0] : lowX_res_i.data[(word_sel+1)*32-:16];
   end
 
   always_comb begin : EVEN_ODD_COMBINE
     if (!buff_req_i.addr[1] && |miss_state && lowX_res_i.valid) begin
       // two parcell miss and not unalign
-      buff_res_o.blk = lowX_res_i.blk[(word_sel+1)*32-:16];
+      buff_res_o.data = lowX_res_i.data[(word_sel+1)*32-:16];
     end else if (buff_req_i.addr[1] && |miss_state && lowX_res_i.valid) begin
       // unalign
       case (miss_state)
-        2'b00: buff_res_o.blk = {even.parcel, odd.parcel};  // never
-        2'b01: buff_res_o.blk = {even.deviceX_parcel, odd.parcel};  // lower:hit | upper:miss
-        2'b10: buff_res_o.blk = {even.parcel, odd.deviceX_parcel};
-        2'b11: buff_res_o.blk = '0;
+        2'b00: buff_res_o.data = {even.parcel, odd.parcel};  // never
+        2'b01: buff_res_o.data = {even.deviceX_parcel, odd.parcel};  // lower:hit | upper:miss
+        2'b10: buff_res_o.data = {even.parcel, odd.deviceX_parcel};
+        2'b11: buff_res_o.data = '0;
       endcase
     end else if (!buff_req_i.addr[1] && &hit_state) begin
-      buff_res_o.blk = {odd.parcel, even.parcel};
+      buff_res_o.data = {odd.parcel, even.parcel};
     end else begin
-      buff_res_o.blk = {even.parcel, odd.parcel};
+      buff_res_o.data = {even.parcel, odd.parcel};
     end
   end
 

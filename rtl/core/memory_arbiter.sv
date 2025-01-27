@@ -48,7 +48,7 @@ module memory_arbiter (
   always_comb begin
     icache_res_o.valid = round == ICACHE && mem_ready_i;
     icache_res_o.ready = 1'b1;
-    icache_res_o.blk = iomem_rdata_i;
+    icache_res_o.data = iomem_rdata_i;
     dcache_res_o.valid = round == DCACHE && mem_ready_i;
     dcache_res_o.ready = 1'b1;
     dcache_res_o.data = iomem_rdata_i;

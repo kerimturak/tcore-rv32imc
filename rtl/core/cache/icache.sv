@@ -45,30 +45,29 @@ module icache #(
   localparam WOFFSET = (BLK_SIZE / 32);
   localparam TAG_SIZE = XLEN - IDX_WIDTH - BOFFSET;
 
-  logic                 uncached_q;
+  icache_req_t          cache_req_q;
   logic                 cache_miss;
   logic                 cache_hit;
   logic [IDX_WIDTH-1:0] rd_idx;
   logic [IDX_WIDTH-1:0] wr_idx;
   logic                 cache_wr_en;
+  logic [ BLK_SIZE-1:0] cache_select_data;
   logic [ BLK_SIZE-1:0] data_rd_line      [NUM_WAY];
   logic [  NUM_WAY-1:0] evict_way;
   logic [  NUM_WAY-1:0] data_write_way;
-  logic [   TAG_SIZE:0] cache_rd_tag      [NUM_WAY];
-  logic                 flush;
-  logic [IDX_WIDTH-1:0] flush_index;
-  logic [IDX_WIDTH-1:0] cache_idx;
   logic [   TAG_SIZE:0] cache_wr_tag;
-  logic [  NUM_WAY-1:0] tag_write_way;
+  logic [   TAG_SIZE:0] cache_rd_tag      [NUM_WAY];
   logic [  NUM_WAY-1:0] cache_valid_vec;
   logic [  NUM_WAY-1:0] cache_hit_vec;
+  logic                 flush;
+  logic [IDX_WIDTH-1:0] flush_index;
+  logic [IDX_WIDTH-1:0] cache_idx [NUM_WAY];
+  logic [IDX_WIDTH-1:0] node_idx;
+  logic [  NUM_WAY-1:0] tag_write_way;
   logic                 node_wr_en;
   logic [  NUM_WAY-2:0] updated_node;
   logic [  NUM_WAY-2:0] cache_wr_node;
   logic [  NUM_WAY-2:0] cache_rd_node;
-  logic [ BLK_SIZE-1:0] cache_select_data;
-  logic                 cpu_valid_q;
-  logic [     XLEN-1:0] addr_q;
 
   for (genvar i = 0; i < NUM_WAY; i++) begin : idata_array
     sp_bram #(
@@ -77,9 +76,9 @@ module icache #(
     ) data_array (
         .clk    (clk_i),
         .chip_en(1'b1),
-        .addr   (cache_idx),
+        .addr   (cache_idx[i]),
         .wr_en  (data_write_way[i]),
-        .wr_data(lowX_res_i.blk),
+        .wr_data(lowX_res_i.data),
         .rd_data(data_rd_line[i])
     );
   end
@@ -91,7 +90,7 @@ module icache #(
     ) tag_array (
         .clk    (clk_i),
         .chip_en(1'b1),
-        .addr   (cache_idx),
+        .addr   (cache_idx[i]),
         .wr_en  (tag_write_way[i]),
         .wr_data(cache_wr_tag),
         .rd_data(cache_rd_tag[i])
@@ -104,7 +103,7 @@ module icache #(
   ) node_array (
       .clk    (clk_i),
       .chip_en(1'b1),
-      .addr   (cache_idx),
+      .addr   (node_idx),
       .wr_en  (node_wr_en),
       .wr_data(cache_wr_node),
       .rd_data(cache_rd_node)
@@ -121,15 +120,13 @@ module icache #(
 
   always_ff @(posedge clk_i) begin
     if (!rst_ni) begin
-      cpu_valid_q <= '0;
-      addr_q      <= '0;
-      uncached_q  <= '0;
+      cache_req_q <= '0;
       flush_index <= '0;
       flush       <= '1;
     end else begin
-      cpu_valid_q <= cache_req_i.valid && !cache_res_o.valid;
-      addr_q <= cache_req_i.addr;
-      uncached_q <= cache_req_i.uncached;
+      cache_req_q.valid <= cache_req_i.valid && !cache_res_o.valid;
+      cache_req_q.addr <= cache_req_i.addr;
+      cache_req_q.uncached <= cache_req_i.uncached;
       if (flush && flush_index != 2 ** IDX_WIDTH - 1) begin
         flush_index <= flush_index + 1'b1;
       end else begin
@@ -142,34 +139,35 @@ module icache #(
   always_comb begin
     for (int i = 0; i < NUM_WAY; i++) begin
       cache_valid_vec[i] = cache_rd_tag[i][TAG_SIZE];
-      cache_hit_vec[i]   = cache_rd_tag[i][TAG_SIZE-1:0] == addr_q[XLEN-1 : IDX_WIDTH+BOFFSET];
+      cache_hit_vec[i]   = cache_rd_tag[i][TAG_SIZE-1:0] == cache_req_q.addr[XLEN-1 : IDX_WIDTH+BOFFSET];
     end
-    cache_wr_tag = flush ? '0 : {1'b1, addr_q[XLEN-1 : IDX_WIDTH+BOFFSET]};
+    cache_wr_tag = flush ? '0 : {1'b1, cache_req_q.addr[XLEN-1 : IDX_WIDTH+BOFFSET]};
     cache_wr_node = flush ? '0 : updated_node;
     cache_select_data = '0;
     for (int i = 0; i < NUM_WAY; i++) begin
       if (cache_hit_vec[i]) cache_select_data = data_rd_line[i];
     end
     rd_idx    = cache_req_i.addr[IDX_WIDTH + BOFFSET-1:BOFFSET];
-    wr_idx    = flush ? flush_index : addr_q[IDX_WIDTH + BOFFSET-1:BOFFSET];
-    cache_miss = cpu_valid_q && !flush && !(|(cache_valid_vec & cache_hit_vec));
-    cache_hit  = cpu_valid_q && !flush &&  (|(cache_valid_vec & cache_hit_vec));
-    cache_wr_en = cache_miss && lowX_res_i.valid && !uncached_q || flush;
+    wr_idx    = flush ? flush_index : cache_req_q.addr[IDX_WIDTH + BOFFSET-1:BOFFSET];
+    cache_miss = cache_req_q.valid && !flush && !(|(cache_valid_vec & cache_hit_vec));
+    cache_hit  = cache_req_q.valid && !flush &&  (|(cache_valid_vec & cache_hit_vec));
+    cache_wr_en = cache_miss && lowX_res_i.valid && !cache_req_q.uncached || flush;
     node_wr_en = cache_wr_en || cache_hit ;
     for (int i = 0; i < NUM_WAY; i++) data_write_way[i] = evict_way[i] && cache_wr_en;
     for (int i = 0; i < NUM_WAY; i++) tag_write_way[i] = flush ? '1 : evict_way[i] && cache_wr_en;
-    cache_idx = cache_wr_en ? wr_idx : rd_idx;
+    for (int i=0; i<NUM_WAY; i++) cache_idx[i] = cache_wr_en ? wr_idx : rd_idx;
+    node_idx = node_wr_en ? wr_idx : rd_idx;
   end
 
   always_comb begin
     lowX_req_o.valid    = cache_miss;
     lowX_req_o.ready    = !flush;
-    lowX_req_o.addr     = addr_q;
-    lowX_req_o.uncached = uncached_q;
+    lowX_req_o.addr     = cache_req_q.addr;
+    lowX_req_o.uncached = cache_req_q.uncached;
     icache_miss_o       = cache_miss;
     cache_res_o.valid   = cache_req_i.ready && (cache_hit || (cache_miss && lowX_req_o.ready && lowX_res_i.valid));
     cache_res_o.ready   = (!cache_miss || lowX_res_i.valid) && !flush;
-    cache_res_o.blk     = (cache_miss && lowX_res_i.valid) ? lowX_res_i.blk : cache_select_data;
+    cache_res_o.data     = (cache_miss && lowX_res_i.valid) ? lowX_res_i.data : cache_select_data;
   end
 
 endmodule
