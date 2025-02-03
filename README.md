@@ -12,8 +12,8 @@ TCORE is a simple core project based on the RISC-V architecture, supporting the 
 
 # Goal Checklist
 - [X] Add branch predictor
-- [] Pass the official RISC-V International tests
-- [] Machine mode csr support
+- [X] Pass the official RISC-V International tests
+- [X] Machine mode csr support
 - [] Documentation page EN/TR
 - [] OpenSource ASIC Synthesis
 
