@@ -55,6 +55,8 @@ module cpu
   predict_info_t            fe_spec;
   exc_type_e                fe_exc_type;
   instr_type_e              fe_instr_type;
+  logic fe_flush_cache;
+
   // ------- decode logic ------
   pipe1_t                   pipe1;
   ctrl_t                    de_ctrl;
@@ -89,6 +91,7 @@ module cpu
   logic                     ex_rd_csr;
   logic                     ex_wr_csr;
   logic     [XLEN-1:0]      ex_mtvec;
+  logic     [XLEN-1:0]      ex_mepc;
   // ------- memory logic ------
   pipe3_t                   pipe3;
   logic                     me_dmiss_stall;
@@ -111,11 +114,13 @@ module cpu
       .rst_ni       (rst_ni),
       .stall_i      (stall_all),
       .fe_stall_i   (fe_stall),
+      .flush_i   (fe_flush_cache),
       .lx_ires_i    (lx_ires),
       .pc_target_i  (ex_pc_target_last),
       .spec_hit_i   (ex_spec_hit),
       .wb_pc_i      (wb_pc),
       .exc_array_i  (exc_array),
+      .mepc_i       (ex_mepc),
       .spec_o       (fe_spec),
       .lx_ireq_o    (lx_ireq),
       .pc_o         (fe_pc),
@@ -134,7 +139,7 @@ module cpu
       pipe1   <= '{exc_type_e: NO_EXCEPTION, instr_type: instr_invalid, default: 0};
       de_spec <= '0;
     end else if (de_enable) begin
-      pipe1   <= '{pc      : fe_pc, pc4     : fe_pc4, pc2     : fe_pc2, inst    : fe_inst, is_comp : fe_is_comp, exc_type: fe_exc_type, instr_type : fe_instr_type};
+      pipe1   <= '{pc      : fe_pc, pc4     : fe_pc4, pc2     : fe_pc2, inst    : fe_inst, is_comp : fe_is_comp, exc_type: ex_spec_hit ? fe_exc_type : NO_EXCEPTION, instr_type : fe_instr_type};
       de_spec <= fe_spec;
     end
   end
@@ -142,6 +147,7 @@ module cpu
   always_comb begin
     de_enable   = !(stall_all || de_stall);
     de_flush_en = priority_flush ? 1'b0 : stall_all ? 1'b0 : de_flush;
+    fe_flush_cache = pipe2.instr_type == fence_i;
   end
 
   stage2_decode decode (
@@ -165,7 +171,7 @@ module cpu
   //----------------------------------              execute             ---------------------------------------------
   always_ff @(posedge clk_i) begin
     if (!rst_ni || ex_flush_en) begin
-      pipe2   <= '{exc_type_e: NO_EXCEPTION, default: 0, alu_ctrl: OP_ADD, pc_sel: NO_BJ, rw_size: NO_SIZE};
+      pipe2   <= '{exc_type_e: NO_EXCEPTION, instr_type: instr_invalid, default: 0, alu_ctrl: OP_ADD, pc_sel: NO_BJ, rw_size: NO_SIZE};
       ex_spec <= '0;
     end else if (!stall_all) begin
       ex_spec <= de_spec;
@@ -193,35 +199,37 @@ module cpu
           r2_addr     : pipe1.inst.r2_addr,
           rd_addr     : pipe1.inst.rd_addr,
           imm         : de_imm,
-          exc_type    : de_exc_type
+          exc_type    : ex_spec_hit ? de_exc_type : NO_EXCEPTION,
+          instr_type  : pipe1.instr_type
       };
     end
   end
 
-  always_comb begin
+always_comb begin
     ex_flush_en = priority_flush ? 1'b0 : stall_all ? 1'b0 : ex_flush;
-      if (alu_exc_type != NO_EXCEPTION) begin
+    if (alu_exc_type != NO_EXCEPTION) begin
         ex_exc_type = alu_exc_type;
-      end else if (de_ctrl.rw_size != NO_SIZE) begin
-        if (de_ctrl.wr_en) begin
-          unique case (de_ctrl.rw_size)
-            HALF_WORD: ex_exc_type = ex_alu_result[1] ? STORE_MISALIGNED : NO_EXCEPTION;
-            WORD:      ex_exc_type = ex_alu_result[1] | ex_alu_result[0] ? STORE_MISALIGNED : NO_EXCEPTION;
-            default:   ex_exc_type = NO_EXCEPTION;
-          endcase
+    end else if (pipe2.rw_size != NO_SIZE) begin
+        if (pipe2.wr_en) begin
+            unique case (pipe2.rw_size)
+                HALF_WORD: ex_exc_type = ex_alu_result[0] ? STORE_MISALIGNED : NO_EXCEPTION;
+                WORD:      ex_exc_type = (ex_alu_result[1] | ex_alu_result[0]) ? STORE_MISALIGNED : NO_EXCEPTION;
+                default:   ex_exc_type = NO_EXCEPTION;
+            endcase
         end else begin
-          unique case (de_ctrl.rw_size)
-            HALF_WORD: ex_exc_type = ex_alu_result[1] ? LOAD_MISALIGNED : NO_EXCEPTION;
-            WORD:      ex_exc_type = ex_alu_result[1] | ex_alu_result[0] ? LOAD_MISALIGNED : NO_EXCEPTION;
-            default:   ex_exc_type = NO_EXCEPTION;
-          endcase
+            unique case (pipe2.rw_size)
+                HALF_WORD: ex_exc_type = ex_alu_result[0] ? LOAD_MISALIGNED : NO_EXCEPTION;
+                WORD:      ex_exc_type = (ex_alu_result[1] | ex_alu_result[0]) ? LOAD_MISALIGNED : NO_EXCEPTION;
+                default:   ex_exc_type = NO_EXCEPTION;
+            endcase
         end
-      end else begin
+    end else begin
         ex_exc_type = NO_EXCEPTION;
-      end
-      ex_rd_csr = pipe2.rd_csr & !stall_all;
-      ex_wr_csr = pipe2.wr_csr & !stall_all;
-  end
+    end
+    ex_rd_csr = pipe2.rd_csr & !stall_all;
+    ex_wr_csr = pipe2.wr_csr & !stall_all;
+end
+
 
   stage3_execution execution (
       .clk_i        (clk_i),
@@ -234,6 +242,7 @@ module cpu
       .r2_data_i    (pipe2.r2_data),
       .alu_in1_sel_i(pipe2.alu_in1_sel),
       .alu_in2_sel_i(pipe2.alu_in2_sel),
+      .instr_type_i (pipe2.instr_type),
 
 
       .trap_active_i(wb_trap_active),
@@ -259,7 +268,8 @@ module cpu
       .pc_sel_o     (ex_pc_sel),
       .alu_stall_o  (ex_alu_stall),
       .exc_type_o   (alu_exc_type),
-      .mtvec_o      (ex_mtvec)
+      .mtvec_o      (ex_mtvec),
+      .mepc_o      (ex_mepc)
   );
 
   always_comb begin

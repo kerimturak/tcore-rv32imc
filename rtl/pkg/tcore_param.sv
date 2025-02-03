@@ -27,6 +27,7 @@ package tcore_param;
   localparam BLK_SIZE = 128;
 
   localparam [6:0] system = 7'b11100_11;
+  localparam [6:0] op_fence_i = 7'b00011_11;
   localparam [6:0] op_r_type = 7'b01100_11;  // 51, add, sub, sll, slt, sltu, xor, srl, sra, or, and,
   localparam [6:0] op_i_type_load = 7'b00000_11;  // lb, lh, lw, lbu, lhu,
   localparam [6:0] op_i_type = 7'b00100_11;  // addi, slti, sltiu, xori, ori, andi, slli, srli, srai,
@@ -110,7 +111,8 @@ package tcore_param;
     CSR_RCI,
     ecall,
     ebreak,
-    mret
+    mret,
+    fence_i
   } instr_type_e;
 
   typedef struct packed {
@@ -126,6 +128,7 @@ package tcore_param;
     input inst_t inst_i;
 
     case (inst_i.opcode)
+          op_fence_i : resolved_instr_type = inst_i.funct3 == '0 ? fence_i : instr_invalid;
           op_r_type: begin
             if (inst_i.funct7[0]) begin
               case (inst_i.funct3)
@@ -343,6 +346,7 @@ package tcore_param;
     logic [11:0]     csr_idx;
     logic            csr_or_data;
     exc_type_e       exc_type;
+    instr_type_e     instr_type;
   } pipe2_t;
 
   typedef struct packed {

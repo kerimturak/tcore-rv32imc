@@ -30,11 +30,13 @@ module stage1_fetch
     input  logic                     rst_ni,
     input  logic                     stall_i,
     input  logic                     fe_stall_i,
+    input  logic                     flush_i,
     input  ilowX_res_t               lx_ires_i,
     input  logic          [XLEN-1:0] pc_target_i,
     input  logic                     spec_hit_i,
     input  logic [4:0]               exc_array_i,
     input  logic          [XLEN-1:0] wb_pc_i,
+    input  logic          [XLEN-1:0] mepc_i,
     output predict_info_t            spec_o,
     output ilowX_req_t               lx_ireq_o,
     output logic          [XLEN-1:0] pc_o,
@@ -62,7 +64,7 @@ module stage1_fetch
   logic                   grand;
 
   logic          [XLEN-1:0] pc;
-  
+
   always_ff @(posedge clk_i) begin
     if (!rst_ni) begin
       pc <= 32'h8000_0000;
@@ -73,15 +75,13 @@ module stage1_fetch
 
   always_comb begin
     pc_o = exc_array_i[4] ? wb_pc_i : pc;
-  
-    fetch_valid   = ~(|exc_array_i[3:0]); // || trap
 
     if (buff_res.valid) begin
       instr_type_o = resolved_instr_type(inst_o);
     end else begin
       instr_type_o = Null_Instr_Type;
     end
-  
+    fetch_valid   = !flush_i && (!spec_hit_i && ~|exc_array_i[3:2] ? 1 : ~(|exc_array_i[3:0])); // || trap
     exc_type_o = NO_EXCEPTION;
 
     if (!grand && fetch_valid) begin
@@ -143,7 +143,8 @@ module stage1_fetch
 
   gray_align_buffer gray_align_buffer (
       .clk_i        (clk_i),
-      .rst_ni       (rst_ni),
+      .rst_ni        (rst_ni),
+      .flush_i      (flush_i),
       .buff_req_i   (buff_req),
       .buff_res_o   (buff_res),
       .buffer_miss_o(buffer_miss),
@@ -154,6 +155,7 @@ module stage1_fetch
   icache icache (
       .clk_i        (clk_i),
       .rst_ni        (rst_ni),
+      .flush_i      (flush_i),
       .cache_req_i  (icache_req),
       .cache_res_o  (icache_res),
       .icache_miss_o(icache_miss),

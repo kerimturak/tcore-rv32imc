@@ -51,13 +51,15 @@ module stage3_execution
     input  pc_sel_e            pc_sel_i,
     input  alu_op_e            alu_ctrl_i,
     input exc_type_e         exc_type_i,
+    input instr_type_e       instr_type_i,
     output logic    [XLEN-1:0] write_data_o,
     output logic    [XLEN-1:0] pc_target_o,
     output logic    [XLEN-1:0] alu_result_o,
     output logic               pc_sel_o,
     output logic               alu_stall_o,
     output exc_type_e          exc_type_o,
-    output logic     [XLEN-1:0] mtvec_o
+    output logic     [XLEN-1:0] mtvec_o,
+    output logic     [XLEN-1:0] mepc_o
 
 );
 
@@ -87,7 +89,7 @@ module stage3_execution
     Eğer exception desteği yoksa burası
     pc_target_o = pc_sel_i == JALR ? (data_a + imm_i) & ~1 : pc_i + signed_imm;
     */
-    pc_target_o = pc_sel_i == JALR ? (data_a + imm_i) : pc_i + signed_imm;
+    pc_target_o = instr_type_i == mret ? mepc_o : pc_sel_i == JALR ? (data_a + imm_i) : pc_i + signed_imm;
 
     pc_sel_o = (pc_sel_i == BEQ) && ex_zero;
     pc_sel_o |= (pc_sel_i == BNE) && !ex_zero;
@@ -97,6 +99,7 @@ module stage3_execution
     pc_sel_o |= (pc_sel_i == BGEU) && (!ex_sltu || ex_zero);
     pc_sel_o |= (pc_sel_i == JALR);
     pc_sel_o |= (pc_sel_i == JAL);
+    pc_sel_o |= (instr_type_i == mret);
 
     exc_type_o = pc_sel_o && pc_target_o[0] ? INSTR_MISALIGNED : (exc_type_i != NO_EXCEPTION ? exc_type_i : NO_EXCEPTION);
   end
@@ -128,6 +131,8 @@ module stage3_execution
       .trap_active_i(trap_active_i),
       .trap_cause_i (trap_cause_i ),
       .trap_mepc_i  (trap_mepc_i  ),
-      .mtvec_o      (mtvec_o)
+      .instr_type_i  (instr_type_i  ),
+      .mtvec_o      (mtvec_o),
+      .mepc_o      (mepc_o)
   );
 endmodule

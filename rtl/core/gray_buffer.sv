@@ -35,6 +35,7 @@ module gray_align_buffer
 ) (
     input  logic        clk_i,
     input  logic        rst_ni,
+    input  logic        flush_i,
     input  icache_req_t buff_req_i,
     output gbuff_res_t  buff_res_o,
     output logic        buffer_miss_o,
@@ -147,7 +148,7 @@ module gray_align_buffer
   end
 
   always_ff @(posedge clk_i) begin
-    if (!rst_ni) begin
+    if (!rst_ni | flush_i) begin
       tag_ram <= '{default: '0};
     end else begin
       for (int i = 0; i < 1; i = i + 1) begin

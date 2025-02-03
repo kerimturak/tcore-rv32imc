@@ -32,6 +32,7 @@ module icache #(
 ) (
     input  logic        clk_i,
     input  logic        rst_ni,
+    input  logic        flush_i,
     input  icache_req_t cache_req_i,
     output icache_res_t cache_res_o,
     output logic        icache_miss_o,
@@ -134,7 +135,7 @@ module icache #(
         flush_index <= flush_index + 1'b1;
       end else begin
         flush_index <= 1'b0;
-        flush       <= 1'b0;
+        flush       <= flush_i;
       end
     end
   end
