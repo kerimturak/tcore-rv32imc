@@ -34,7 +34,7 @@ module hazard_unit (
     input  logic [4:0] rd_addr_me_i,
     input  logic       rf_rw_me_i,
     input  logic       rf_rw_wb_i,
-    input    logic [4:0]exc_array_i,
+    //input    logic [4:0]exc_array_i,
     input  logic [4:0] rd_addr_wb_i,
     output logic       stall_fe_o,
     output logic       stall_de_o,

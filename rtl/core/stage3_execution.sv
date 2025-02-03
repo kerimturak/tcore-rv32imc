@@ -56,7 +56,9 @@ module stage3_execution
     output logic    [XLEN-1:0] alu_result_o,
     output logic               pc_sel_o,
     output logic               alu_stall_o,
-    output exc_type_e          exc_type_o
+    output exc_type_e          exc_type_o,
+    output logic     [XLEN-1:0] mtvec_o
+
 );
 
   logic        [XLEN-1:0] data_a;
@@ -125,6 +127,7 @@ module stage3_execution
       .csr_rdata_o(csr_rdata),
       .trap_active_i(trap_active_i),
       .trap_cause_i (trap_cause_i ),
-      .trap_mepc_i  (trap_mepc_i  )
+      .trap_mepc_i  (trap_mepc_i  ),
+      .mtvec_o      (mtvec_o)
   );
 endmodule

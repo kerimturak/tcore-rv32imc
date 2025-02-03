@@ -35,7 +35,8 @@ module cs_reg_file
     output logic [XLEN-1:0] csr_rdata_o,
     input  logic               trap_active_i,
     input  logic    [XLEN-1:0] trap_cause_i,
-    input  logic    [XLEN-1:0] trap_mepc_i
+    input  logic    [XLEN-1:0] trap_mepc_i,
+    output logic     [XLEN-1:0] mtvec_o
 );
 
   logic go_to_trap;
@@ -96,6 +97,7 @@ module cs_reg_file
   always_comb begin
     go_to_trap = trap_active_i;
     return_trap = mepc;
+    mtvec_o = mtvec;
   end
 
   always_ff @(posedge clk_i) begin

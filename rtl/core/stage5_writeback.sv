@@ -29,6 +29,8 @@ module stage5_writeback
     input  logic [     1:0] data_sel_i,
     input  logic [XLEN-1:0] pc2_i,
     input  logic [XLEN-1:0] pc4_i,
+    input  logic [XLEN-1:0] pc_i,
+    input  logic [XLEN-1:0] mtvec_i,
     input  logic            is_comp_i,
     input  logic [XLEN-1:0] alu_result_i,
     input  logic [XLEN-1:0] read_data_i,
@@ -47,24 +49,29 @@ module stage5_writeback
     rf_rw_en_o = rf_rw_en_i && !stall_i;
     wb_data_o  = data_sel_i[1] ? (is_comp_i ? pc2_i : pc4_i) : (data_sel_i[0] ? read_data_i : alu_result_i);
     trap_active_o = '0;
-    trap_mepc_o = pc4_i;
+    trap_mepc_o = pc_i;
     if (exc_type_i != NO_EXCEPTION) begin
       trap_active_o = '1;
     end
 
     case (exc_type_i)
-      NO_EXCEPTION: trap_cause_o = '0;
-      INSTR_MISALIGNED: trap_cause_o = 1;
-      INSTR_ACCESS_FAULT: trap_cause_o = 2;
-      ILLEGAL_INSTRUCTION: trap_cause_o = 3;
-      EBREAK: trap_cause_o = 4;
-      LOAD_MISALIGNED: trap_cause_o = 5;
-      LOAD_ACCESS_FAULT: trap_cause_o = 6;
-      STORE_MISALIGNED: trap_cause_o = 7;
-      STORE_ACCESS_FAULT: trap_cause_o = 8;
-      ECALL: trap_cause_o = 9;
-      default: trap_cause_o = 0;
+      NO_EXCEPTION: trap_cause_o = '1;
+      //INSTR_MISALIGNED: trap_cause_o = 0; // compressed destekleniyor
+      INSTR_ACCESS_FAULT: trap_cause_o = 1;
+      ILLEGAL_INSTRUCTION: trap_cause_o = 2;
+      EBREAK: trap_cause_o = 3;
+      LOAD_MISALIGNED: trap_cause_o = 4;
+      LOAD_ACCESS_FAULT: trap_cause_o = 5;
+      STORE_MISALIGNED: trap_cause_o = 6;
+      STORE_ACCESS_FAULT: trap_cause_o = 7;
+      ECALL: trap_cause_o = 11;
+      default: trap_cause_o = '1;
     endcase
+
+
+    if (trap_active_o) begin
+      wb_pc_o = mtvec_i;
+    end
   end
 
 endmodule

@@ -43,7 +43,8 @@ module stage1_fetch
     output logic          [XLEN-1:0] inst_o,
     output logic                     imiss_stall_o,
     output logic                     is_comp_o,
-    output exc_type_e                exc_type_o
+    output exc_type_e                exc_type_o,
+    output instr_type_e              instr_type_o
 );
 
   logic                   fetch_valid;
@@ -60,21 +61,37 @@ module stage1_fetch
   logic                   illegal_instr;
   logic                   grand;
 
+  logic          [XLEN-1:0] pc;
+  
   always_ff @(posedge clk_i) begin
     if (!rst_ni) begin
-      pc_o <= 32'h4000_0000;
+      pc <= 32'h8000_0000;
     end else if (pc_en) begin
-      pc_o <= fetch_valid ? pc_next : pc_o;
+      pc <= fetch_valid ? pc_next : pc;
     end
   end
 
   always_comb begin
+    pc_o = exc_array_i[4] ? wb_pc_i : pc;
+  
     fetch_valid   = ~(|exc_array_i[3:0]); // || trap
+
+    if (buff_res.valid) begin
+      instr_type_o = resolved_instr_type(inst_o);
+    end else begin
+      instr_type_o = Null_Instr_Type;
+    end
+  
+    exc_type_o = NO_EXCEPTION;
 
     if (!grand && fetch_valid) begin
       exc_type_o = INSTR_ACCESS_FAULT;
-    end else if (illegal_instr && fetch_valid) begin
+    end else if (illegal_instr && buff_res.valid) begin
       exc_type_o = ILLEGAL_INSTRUCTION;
+    end else if (instr_type_o == ecall) begin
+      exc_type_o = ECALL;
+    end else if (instr_type_o == ebreak) begin
+      exc_type_o = EBREAK;
     end else begin
       exc_type_o = NO_EXCEPTION;
     end
@@ -84,6 +101,7 @@ module stage1_fetch
     pc4_o         = 32'd4 + pc_o;
     pc2_o         = 32'd2 + pc_o;
     buff_req      = '{valid    : fetch_valid, ready    : 1, addr     : pc_o, uncached : uncached};
+    
   end
 
   always_comb begin
@@ -149,5 +167,33 @@ module stage1_fetch
       .is_compressed_o(is_comp_o),
       .illegal_instr_o(illegal_instr)
   );
+
+
+
+integer log_file;
+
+// Log dosyasını aç
+initial begin
+  log_file = $fopen("fetch_log.txt", "w");
+  if (log_file == 0) begin
+    $display("ERROR: Log file could not be opened!");
+    $finish;
+  end
+end
+
+// Fetch edilen instruction’ları kaydet
+always @(posedge clk_i) begin
+if (!rst_ni) begin
+    $fclose(log_file);
+    log_file = $fopen("fetch_log.txt", "w");
+  end else if (fetch_valid) begin
+    $fwrite(log_file, "%h\n", pc_o); // Sadece PC yazılıyor
+  end
+end
+
+// Simülasyon bittiğinde dosyayı kapat
+final begin
+  $fclose(log_file);
+end
 
 endmodule

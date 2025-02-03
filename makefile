@@ -58,6 +58,10 @@ optimize: compile
 # Run simulation
 simulate: compile
 	$(VSIM)  $(LIBRARY).$(TOP_LEVEL) -do "questa.do" -t ns -autofindloop -detectzerodelayloop -iterationlimit=5k -voptargs=+acc=npr
+
+# Run simulation
+simulate_batch: compile
+	$(VSIM)  -c $(LIBRARY).$(TOP_LEVEL) -do "run 50000ns; quit" -t ns -autofindloop -detectzerodelayloop -iterationlimit=5k -voptargs=+acc=npr
 # Clean generated files
 clean:
 	rm -rf $(WORK_DIR)
@@ -66,3 +70,21 @@ clean:
 	rm -f modelsim.ini
 
 .PHONY: all compile simulate clean
+
+
+
+
+
+
+DUMP_FILE=./tests/riscv-tests/isa/rv32uc-p-rvc.dump
+FETCH_LOG=fetch_log.txt
+PASS_FAIL_ADDR=pass_fail_addr.txt
+CHECK_SCRIPT=check_pass_fail.py
+
+# Dump'tan PASS ve FAIL adreslerini çıkar
+extract:
+	python dump_parser.py $(DUMP_FILE)
+
+# Test Sonucunu Kontrol Et
+check: extract
+	python $(CHECK_SCRIPT) $(PASS_FAIL_ADDR) $(FETCH_LOG)

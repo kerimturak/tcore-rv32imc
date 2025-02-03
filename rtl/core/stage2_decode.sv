@@ -35,6 +35,7 @@ module stage2_decode
     input  logic  [     4:0] rd_addr_i,
     input  logic             rf_rw_en_i,
     input exc_type_e         exc_type_i,
+    input instr_type_e       instr_type_i,
 
     output logic  [XLEN-1:0] r1_data_o,
     output logic  [XLEN-1:0] r2_data_o,
@@ -55,6 +56,7 @@ module stage2_decode
 
   control_unit control_unit (
       .inst_i(inst_i),
+      .instr_type_i(instr_type_i),
       .ctrl_o  (ctrl_o)
   );
 
