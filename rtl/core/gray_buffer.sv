@@ -35,6 +35,7 @@ module gray_align_buffer
 ) (
     input  logic        clk_i,
     input  logic        rst_ni,
+    input  logic        flush_i,
     input  icache_req_t buff_req_i,
     output gbuff_res_t  buff_res_o,
     output logic        buffer_miss_o,
@@ -147,7 +148,7 @@ module gray_align_buffer
   end
 
   always_ff @(posedge clk_i) begin
-    if (!rst_ni) begin
+    if (!rst_ni | flush_i) begin
       tag_ram <= '{default: '0};
     end else begin
       for (int i = 0; i < 1; i = i + 1) begin
@@ -163,14 +164,14 @@ module gray_align_buffer
     parcel_idx = unalign ? 0 : {2'b0, word_sel};
     even.parcel = unalign ? even.rd_parcel[0] : even.rd_parcel[parcel_idx+buff_req_i.addr[1]];
     odd.parcel = odd.rd_parcel[word_sel];
-    odd.deviceX_parcel = lowX_res_i.blk[(word_sel+1)*32-:16];
-    even.deviceX_parcel = unalign ? lowX_res_i.blk[15 : 0] : lowX_res_i.blk[(word_sel+1)*32-:16];
+    odd.deviceX_parcel = lowX_res_i.blk[((word_sel+1)*32)-1-:16];
+    even.deviceX_parcel = unalign ? lowX_res_i.blk[15 : 0] : lowX_res_i.blk[((word_sel+1)*32)-1-:16];
   end
 
   always_comb begin : EVEN_ODD_COMBINE
-    if (!buff_req_i.addr[1] && |miss_state && lowX_res_i.valid) begin
+    if (!unalign && !buff_req_i.addr[1] && |miss_state && lowX_res_i.valid) begin
       // two parcell miss and not unalign
-      buff_res_o.blk = lowX_res_i.blk[(word_sel+1)*32-:16];
+      buff_res_o.blk = lowX_res_i.blk[((word_sel+1)*32)-1-:32];
     end else if (buff_req_i.addr[1] && |miss_state && lowX_res_i.valid) begin
       // unalign
       case (miss_state)

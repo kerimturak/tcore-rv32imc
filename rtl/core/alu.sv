@@ -30,6 +30,7 @@ module alu
 (
     input  logic               clk_i,
     input  logic               rst_ni,
+    input  logic    [XLEN-1:0] csr_rdata_i,
     input  logic    [XLEN-1:0] alu_a_i,
     input  logic    [XLEN-1:0] alu_b_i,
     input  alu_op_e            op_sel_i,
@@ -145,78 +146,6 @@ module alu
     mul_busy = 0;
   end
 
-`elsif WALLACE_MULTY_CYCLE
-
-  typedef enum logic [2:0] {
-    IDLE,
-    CALC_1,
-    CALC_2,
-    CALC_3,
-    CALC_4
-  } state_t;
-  state_t state, next_state;
-
-  logic [15:0] products[3:0];
-  logic [ 7:0] mul_A;
-
-  for (genvar i = 0; i < 4; i++) begin : generate_multipliers
-    wallace_8x8_product wtm (
-        .a(mul_A),
-        .b(abs_B[(i+1)*8-1-:8]),
-        .z(products[i])
-    );
-  end
-
-  assign mul_busy = state != IDLE;
-
-  always_ff @(posedge clk_i) begin
-    if (!rst_ni) begin
-      state <= IDLE;
-      unsigned_prod <= 64'd0;
-      mul_valid <= 1'b0;
-    end else begin
-      state <= next_state;
-      if (state == IDLE) begin
-        unsigned_prod <= 64'd0;
-        mul_valid <= 1'b0;
-      end else if (state inside {CALC_1, CALC_2, CALC_3, CALC_4}) begin
-        unsigned_prod <= unsigned_prod + (products[0] << (0 +  (state - 1) * 8)) +
-                                         (products[1] << (8 +  (state - 1) * 8)) +
-                                         (products[2] << (16 + (state - 1) * 8)) +
-                                         (products[3] << (24 + (state - 1) * 8));
-        mul_valid <= state == CALC_4 ? 1'b1 : 1'b0;
-      end
-    end
-  end
-
-  always_comb begin
-    next_state = state;
-    case (state)
-      IDLE: begin
-        mul_A = '0;
-        if (mul_start) begin
-          next_state = CALC_1;
-        end
-      end
-      CALC_1: begin
-        mul_A = abs_A[7:0];
-        next_state = CALC_2;
-      end
-      CALC_2: begin
-        mul_A = abs_A[15:8];
-        next_state = CALC_3;
-      end
-      CALC_3: begin
-        mul_A = abs_A[23:16];
-        next_state = CALC_4;
-      end
-      CALC_4: begin
-        mul_A = abs_A[31:24];
-        next_state = IDLE;
-      end
-    endcase
-  end
-
 `else
 
   seq_multiplier #(
@@ -293,6 +222,12 @@ module alu
       OP_REM:    alu_o = rslt.REM;
       OP_REMU:   alu_o = rslt.REMU;
       OP_LUI:    alu_o = rslt.LUI;
+      OP_CSRRW:  alu_o = alu_a_i;
+      OP_CSRRS:  alu_o = csr_rdata_i | alu_a_i;
+      OP_CSRRC:  alu_o = csr_rdata_i & ~alu_a_i;
+      OP_CSRRWI: alu_o = alu_b_i;
+      OP_CSRRSI: alu_o = csr_rdata_i | alu_b_i;
+      OP_CSRRCI: alu_o = csr_rdata_i & ~alu_b_i;
       default:   alu_o = 0;
     endcase
 

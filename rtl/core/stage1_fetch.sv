@@ -30,9 +30,13 @@ module stage1_fetch
     input  logic                     rst_ni,
     input  logic                     stall_i,
     input  logic                     fe_stall_i,
+    input  logic                     flush_i,
     input  ilowX_res_t               lx_ires_i,
     input  logic          [XLEN-1:0] pc_target_i,
     input  logic                     spec_hit_i,
+    input  logic [4:0]               exc_array_i,
+    input  logic          [XLEN-1:0] wb_pc_i,
+    input  logic          [XLEN-1:0] mepc_i,
     output predict_info_t            spec_o,
     output ilowX_req_t               lx_ireq_o,
     output logic          [XLEN-1:0] pc_o,
@@ -40,7 +44,9 @@ module stage1_fetch
     output logic          [XLEN-1:0] pc2_o,
     output logic          [XLEN-1:0] inst_o,
     output logic                     imiss_stall_o,
-    output logic                     is_comp_o
+    output logic                     is_comp_o,
+    output exc_type_e                exc_type_o,
+    output instr_type_e              instr_type_o
 );
 
   logic                   fetch_valid;
@@ -55,22 +61,47 @@ module stage1_fetch
   icache_res_t            icache_res;
   icache_req_t            icache_req;
   logic                   illegal_instr;
+  logic                   grand;
+
+  logic          [XLEN-1:0] pc;
 
   always_ff @(posedge clk_i) begin
     if (!rst_ni) begin
-      pc_o <= 32'h4000_0000;
+      pc <= 32'h8000_0000;
     end else if (pc_en) begin
-      pc_o <= fetch_valid ? pc_next : pc_o;
+      pc <= fetch_valid ? pc_next : pc;
     end
   end
 
   always_comb begin
-    fetch_valid   = 1'b1;
+    pc_o = exc_array_i[4] ? wb_pc_i : pc;
+
+    if (buff_res.valid) begin
+      instr_type_o = resolved_instr_type(inst_o);
+    end else begin
+      instr_type_o = Null_Instr_Type;
+    end
+    fetch_valid   = !flush_i && (!spec_hit_i && ~|exc_array_i[3:2] ? 1 : ~(|exc_array_i[3:0])); // || trap
+    exc_type_o = NO_EXCEPTION;
+
+    if (!grand && fetch_valid) begin
+      exc_type_o = INSTR_ACCESS_FAULT;
+    end else if (illegal_instr && buff_res.valid) begin
+      exc_type_o = ILLEGAL_INSTRUCTION;
+    end else if (instr_type_o == ecall) begin
+      exc_type_o = ECALL;
+    end else if (instr_type_o == ebreak) begin
+      exc_type_o = EBREAK;
+    end else begin
+      exc_type_o = NO_EXCEPTION;
+    end
+
     pc_en         = !(stall_i || fe_stall_i);
     imiss_stall_o = (fetch_valid && !buff_res.valid || buffer_miss);
     pc4_o         = 32'd4 + pc_o;
     pc2_o         = 32'd2 + pc_o;
     buff_req      = '{valid    : fetch_valid, ready    : 1, addr     : pc_o, uncached : uncached};
+    
   end
 
   always_comb begin
@@ -84,13 +115,14 @@ module stage1_fetch
   pma ipma (
       .addr_i     (pc_o),
       .uncached_o (uncached),
-      .memregion_o(memregion)  // unused now
+      .memregion_o(memregion),  // unused now
+      .grand_o    (grand)
   );
 
   `ifdef STATIC_PREDICT
     t_branch_predict
   `else
-    t_gshare 
+    t_gshare
   `endif
     branch_prediction (
       .clk_i        (clk_i),
@@ -111,7 +143,8 @@ module stage1_fetch
 
   gray_align_buffer gray_align_buffer (
       .clk_i        (clk_i),
-      .rst_ni       (rst_ni),
+      .rst_ni        (rst_ni),
+      .flush_i      (flush_i),
       .buff_req_i   (buff_req),
       .buff_res_o   (buff_res),
       .buffer_miss_o(buffer_miss),
@@ -122,6 +155,7 @@ module stage1_fetch
   icache icache (
       .clk_i        (clk_i),
       .rst_ni        (rst_ni),
+      .flush_i      (flush_i),
       .cache_req_i  (icache_req),
       .cache_res_o  (icache_res),
       .icache_miss_o(icache_miss),
@@ -135,5 +169,33 @@ module stage1_fetch
       .is_compressed_o(is_comp_o),
       .illegal_instr_o(illegal_instr)
   );
+
+
+
+integer log_file;
+
+// Log dosyasını aç
+initial begin
+  log_file = $fopen("fetch_log.txt", "w");
+  if (log_file == 0) begin
+    $display("ERROR: Log file could not be opened!");
+    $finish;
+  end
+end
+
+// Fetch edilen instruction’ları kaydet
+always @(posedge clk_i) begin
+if (!rst_ni) begin
+    $fclose(log_file);
+    log_file = $fopen("fetch_log.txt", "w");
+  end else if (fetch_valid) begin
+    $fwrite(log_file, "%h\n", pc_o); // Sadece PC yazılıyor
+  end
+end
+
+// Simülasyon bittiğinde dosyayı kapat
+final begin
+  $fclose(log_file);
+end
 
 endmodule

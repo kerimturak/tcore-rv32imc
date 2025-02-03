@@ -33,13 +33,13 @@ module extend
 
   always_comb begin : immediate_generator
     case (sel_i)
-      I_IMM:   imm_o = {{20{imm_i[31]}}, imm_i[31:20]};                                 // i 12-bit signed immediate
-      I_USIMM: imm_o = {{20{1'b0}}, imm_i[31:20]};                                      // i 12-bit unsigned immediate
-      S_IMM:   imm_o = {{20{imm_i[31]}}, imm_i[31:25], imm_i[11:7]};                    // s 12-bit signed immediate
-      B_IMM:   imm_o = {{20{imm_i[31]}}, imm_i[7], imm_i[30:25], imm_i[11:8], 1'b0};    // b 13-bit signed immediate
-      U_IMM:   imm_o = {{imm_i[31:12]}, 12'b0};                                         // u 20-bit signed immediate
+      I_IMM:   imm_o = {{20{imm_i[31]}}, imm_i[31:20]};  // i 12-bit signed immediate
+      I_USIMM: imm_o = {{20{1'b0}}, imm_i[31:20]};  // i 12-bit unsigned immediate
+      S_IMM:   imm_o = {{20{imm_i[31]}}, imm_i[31:25], imm_i[11:7]};  // s 12-bit signed immediate
+      B_IMM:   imm_o = {{20{imm_i[31]}}, imm_i[7], imm_i[30:25], imm_i[11:8], 1'b0};  // b 13-bit signed immediate
+      U_IMM:   imm_o = {{imm_i[31:12]}, 12'b0};  // u 20-bit signed immediate
       J_IMM:   imm_o = {{12{imm_i[31]}}, imm_i[19:12], imm_i[20], imm_i[30:21], 1'b0};  // j 20-bit signed immediate
-      //6:       imm_o = {27'b0, imm_i[24:20]};  // shift amount (shamt)
+      CSR_IMM: imm_o = {27'b0, imm_i[19:15]};
       default: imm_o = '0;
     endcase
   end

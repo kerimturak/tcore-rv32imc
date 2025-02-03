@@ -36,18 +36,31 @@ module stage3_execution
     input  logic    [XLEN-1:0] r2_data_i,
     input  logic    [     1:0] alu_in1_sel_i,
     input  logic               alu_in2_sel_i,
+    input  logic               rd_csr_i,
+    input  logic               wr_csr_i,
+    input  logic    [    11:0] csr_idx_i,
+    input  logic               csr_or_data_i,
     input  logic               is_comp_i,
+    input  logic               trap_active_i,
+    input  logic    [XLEN-1:0] trap_cause_i,
+    input  logic    [XLEN-1:0] trap_mepc_i,
     input  logic    [XLEN-1:0] pc_i,
     input  logic    [XLEN-1:0] pc2_i,
     input  logic    [XLEN-1:0] pc4_i,
     input  logic    [XLEN-1:0] imm_i,
     input  pc_sel_e            pc_sel_i,
     input  alu_op_e            alu_ctrl_i,
+    input exc_type_e         exc_type_i,
+    input instr_type_e       instr_type_i,
     output logic    [XLEN-1:0] write_data_o,
     output logic    [XLEN-1:0] pc_target_o,
     output logic    [XLEN-1:0] alu_result_o,
     output logic               pc_sel_o,
-    output logic               alu_stall_o
+    output logic               alu_stall_o,
+    output exc_type_e          exc_type_o,
+    output logic     [XLEN-1:0] mtvec_o,
+    output logic     [XLEN-1:0] mepc_o
+
 );
 
   logic        [XLEN-1:0] data_a;
@@ -57,6 +70,8 @@ module stage3_execution
   logic                   ex_zero;
   logic                   ex_slt;
   logic                   ex_sltu;
+  logic        [XLEN-1:0] alu_result;
+  logic        [XLEN-1:0] csr_rdata;
 
   always_comb begin
     data_a = fwd_a_i[1] ? alu_result_i : (fwd_a_i[0] ? wb_data_i : r1_data_i);
@@ -70,7 +85,11 @@ module stage3_execution
     write_data_o = fwd_b_i[1] ? alu_result_i : (fwd_b_i[0] ? wb_data_i : r2_data_i);
     operant_b = alu_in2_sel_i ? imm_i : write_data_o;
     signed_imm = imm_i;
+    /*
+    Eğer exception desteği yoksa burası
     pc_target_o = pc_sel_i == JALR ? (data_a + imm_i) & ~1 : pc_i + signed_imm;
+    */
+    pc_target_o = instr_type_i == mret ? mepc_o : pc_sel_i == JALR ? (data_a + imm_i) : pc_i + signed_imm;
 
     pc_sel_o = (pc_sel_i == BEQ) && ex_zero;
     pc_sel_o |= (pc_sel_i == BNE) && !ex_zero;
@@ -80,19 +99,40 @@ module stage3_execution
     pc_sel_o |= (pc_sel_i == BGEU) && (!ex_sltu || ex_zero);
     pc_sel_o |= (pc_sel_i == JALR);
     pc_sel_o |= (pc_sel_i == JAL);
+    pc_sel_o |= (instr_type_i == mret);
+
+    exc_type_o = pc_sel_o && pc_target_o[0] ? INSTR_MISALIGNED : (exc_type_i != NO_EXCEPTION ? exc_type_i : NO_EXCEPTION);
   end
 
   alu alu (
       .clk_i      (clk_i),
       .rst_ni     (rst_ni),
       .alu_a_i    (operant_a),
+      .csr_rdata_i(csr_rdata),
       .alu_b_i    (operant_b),
       .op_sel_i   (alu_ctrl_i),
       .alu_stall_o(alu_stall_o),
       .zero_o     (ex_zero),
       .slt_o      (ex_slt),
       .sltu_o     (ex_sltu),
-      .alu_o      (alu_result_o)
+      .alu_o      (alu_result)
   );
 
+  assign alu_result_o = csr_or_data_i ? csr_rdata : alu_result;
+
+  cs_reg_file u_cs_reg_file (
+      .clk_i      (clk_i),
+      .rst_ni     (rst_ni),
+      .rd_en_i    (rd_csr_i),
+      .wr_en_i    (wr_csr_i),
+      .csr_idx_i  (csr_idx_i),
+      .csr_wdata_i(alu_result),
+      .csr_rdata_o(csr_rdata),
+      .trap_active_i(trap_active_i),
+      .trap_cause_i (trap_cause_i ),
+      .trap_mepc_i  (trap_mepc_i  ),
+      .instr_type_i  (instr_type_i  ),
+      .mtvec_o      (mtvec_o),
+      .mepc_o      (mepc_o)
+  );
 endmodule

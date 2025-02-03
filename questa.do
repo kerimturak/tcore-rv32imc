@@ -15,14 +15,10 @@ configure wave -justifyvalue left
 configure wave -signalnamewidth 1
 
 
-add wave -position insertpoint  \
--radix decimal \
-sim:/tb_wrapper/teknofest_wrapper/soc/fetch/branch_prediction/per_count_predict_hit \
-sim:/tb_wrapper/teknofest_wrapper/soc/fetch/branch_prediction/per_count_predict_miss
-
-
 add wave -position insertpoint -radix hexadecimal -group "WRAPPER"  sim:/tb_wrapper/teknofest_wrapper/soc/decode/reg_file/registers
 add wave -position insertpoint -radix hexadecimal -group "WRAPPER"  sim:/tb_wrapper/teknofest_wrapper/soc/memory/uart_inst/uart_tx/tx_buffer
+
+add wave -position insertpoint -radix hexadecimal -group "WRAPPER"  -group "CSR" sim:/tb_wrapper/teknofest_wrapper/soc/execution/u_cs_reg_file/*
 
 ################## Wrapper ##################
 add wave -position insertpoint -radix hexadecimal -in       -group "WRAPPER" -group in       sim:/tb_wrapper/teknofest_wrapper/*
@@ -97,6 +93,12 @@ add wave -position insertpoint -radix hexadecimal        -group "WRAPPER" -group
 add wave -position insertpoint -radix hexadecimal -in       -group "WRAPPER" -group "SOC"  -group "EXECUTION3" -group "ALU" -group in       sim:/tb_wrapper/teknofest_wrapper/soc/execution/alu/*
 add wave -position insertpoint -radix hexadecimal -out      -group "WRAPPER" -group "SOC"  -group "EXECUTION3" -group "ALU" -group out      sim:/tb_wrapper/teknofest_wrapper/soc/execution/alu/*
 add wave -position insertpoint -radix hexadecimal -internal -group "WRAPPER" -group "SOC"  -group "EXECUTION3" -group "ALU" -group internal sim:/tb_wrapper/teknofest_wrapper/soc/execution/alu/*
+
+################## CS_RF ##################
+add wave -position insertpoint -radix hexadecimal -in       -group "WRAPPER" -group "SOC"  -group "EXECUTION3" -group "CSR" -group in       sim:/tb_wrapper/teknofest_wrapper/soc/execution/u_cs_reg_file/*
+add wave -position insertpoint -radix hexadecimal -out      -group "WRAPPER" -group "SOC"  -group "EXECUTION3" -group "CSR" -group out      sim:/tb_wrapper/teknofest_wrapper/soc/execution/u_cs_reg_file/*
+add wave -position insertpoint -radix hexadecimal -internal -group "WRAPPER" -group "SOC"  -group "EXECUTION3" -group "CSR" -group internal sim:/tb_wrapper/teknofest_wrapper/soc/execution/u_cs_reg_file/*
+
 
 ################## DCACHE ##################
 add wave -position insertpoint -radix hexadecimal -in       -group "WRAPPER" -group "SOC"  -group "MEMORY4" -group "DCACHE" -group in       sim:/tb_wrapper/teknofest_wrapper/soc/memory/dcache/*

@@ -28,30 +28,30 @@ module teknofest_wrapper (
 );
 
   // 50 MHz clocking wizard ip
-  wire locked;
-  wire clk_o;
-  clk_wiz_0 dutclk (
-    .clk_out1 (clk_o    ),
-    .clk_in1  (clk_i    ),
-    .reset    (!rst_ni  ),
-    .locked   (locked   )
-  );
+  //wire locked;
+  //wire clk_o;
+  //clk_wiz_0 dutclk (
+  //  .clk_out1 (clk_o    ),
+  //  .clk_in1  (clk_i    ),
+  //  .reset    (!rst_ni  ),
+  //  .locked   (locked   )
+  //);
 
-  //assign clk_o = clk_i;
+  assign clk_o = clk_i;
   localparam BLOCK_SIZE = 128;
   localparam NUMS_BYTE = BLOCK_SIZE / 8;
   localparam NUMS_WORD = BLOCK_SIZE / 32;
   localparam BYTE_OFFSET = $clog2(NUMS_BYTE);
   localparam RAM_DELAY = 16;
   parameter integer MEM_WORDS = 4096;
-  parameter [31:0] PROGADDR_RESET = 32'h4000_0000;
+  parameter [31:0] PROGADDR_RESET = 32'h8000_0000;
   parameter [31:0] STACKADDR = PROGADDR_RESET + (4 * MEM_WORDS);
   parameter [31:0] PROGADDR_IRQ = 32'h0000_0000;
   parameter [31:0] UART_BASE_ADDR = 32'h2000_0000;
   parameter [31:0] UART_MASK_ADDR = 32'h0000_000f;
   parameter [31:0] SPI_BASE_ADDR = 32'h2001_0000;
   parameter [31:0] SPI_MASK_ADDR = 32'h0000_00ff;
-  parameter [31:0] RAM_BASE_ADDR = 32'h4000_0000;
+  parameter [31:0] RAM_BASE_ADDR = 32'h8000_0000;
   parameter [31:0] RAM_MASK_ADDR = 32'h000f_ffff;
   parameter [31:0] CHIP_IO_BASE_ADDR = SPI_BASE_ADDR + SPI_MASK_ADDR;
   parameter [31:0] CHIP_IO_MASK_ADDR = RAM_BASE_ADDR + RAM_MASK_ADDR;

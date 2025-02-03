@@ -34,6 +34,7 @@ module hazard_unit (
     input  logic [4:0] rd_addr_me_i,
     input  logic       rf_rw_me_i,
     input  logic       rf_rw_wb_i,
+    //input    logic [4:0]exc_array_i,
     input  logic [4:0] rd_addr_wb_i,
     output logic       stall_fe_o,
     output logic       stall_de_o,
@@ -48,7 +49,6 @@ module hazard_unit (
   logic lw_stall;
 
   always_comb begin
-
     if (rf_rw_me_i && (r1_addr_ex_i == rd_addr_me_i) && (r1_addr_ex_i != 0)) begin // memory to execution
       fwd_a_ex_o = 2'b10;
     end else if (rf_rw_wb_i && (r1_addr_ex_i == rd_addr_wb_i) && (r1_addr_ex_i != 0)) begin // writeback to execution
@@ -71,6 +71,7 @@ module hazard_unit (
     lw_stall   = rslt_sel_ex_0 && ((r1_addr_de_i == rd_addr_ex_i) || (r2_addr_de_i == rd_addr_ex_i));
     stall_fe_o = lw_stall;
     stall_de_o = lw_stall;
+
     flush_de_o = pc_sel_ex_i;
     flush_ex_o = lw_stall || pc_sel_ex_i;
 
