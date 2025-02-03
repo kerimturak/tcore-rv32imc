@@ -1,0 +1,121 @@
+make[2]: Entering directory '/home/kerim/tcore-rv32imc'
+vlog -work work -sv -suppress vlog-2583 -suppress vopt-8386 -suppress vlog-2275 -svinputport=relaxed +acc +incdir+/home/kerim/tcore-rv32imc/rtl/include/ /home/kerim/tcore-rv32imc/rtl/pkg/tcore_param.sv /home/kerim/tcore-rv32imc/rtl/core/alu.sv /home/kerim/tcore-rv32imc/rtl/core/compressed_decoder.sv /home/kerim/tcore-rv32imc/rtl/core/control_unit.sv /home/kerim/tcore-rv32imc/rtl/core/cpu.sv /home/kerim/tcore-rv32imc/rtl/core/cs_reg_file.sv /home/kerim/tcore-rv32imc/rtl/core/extend.sv /home/kerim/tcore-rv32imc/rtl/core/gray_buffer.sv /home/kerim/tcore-rv32imc/rtl/core/hazard_unit.sv /home/kerim/tcore-rv32imc/rtl/core/memory_arbiter.sv /home/kerim/tcore-rv32imc/rtl/core/pma.sv /home/kerim/tcore-rv32imc/rtl/core/ras.sv /home/kerim/tcore-rv32imc/rtl/core/reg_file.sv /home/kerim/tcore-rv32imc/rtl/core/stage1_fetch.sv /home/kerim/tcore-rv32imc/rtl/core/stage2_decode.sv /home/kerim/tcore-rv32imc/rtl/core/stage3_execution.sv /home/kerim/tcore-rv32imc/rtl/core/stage4_memory.sv /home/kerim/tcore-rv32imc/rtl/core/stage5_writeback.sv /home/kerim/tcore-rv32imc/rtl/core/branch_prediction/branch_prediction.sv /home/kerim/tcore-rv32imc/rtl/core/branch_prediction/signed_branch_prediction.sv /home/kerim/tcore-rv32imc/rtl/core/branch_prediction/t_branch_prediction.sv /home/kerim/tcore-rv32imc/rtl/core/branch_prediction/t_gshare.sv /home/kerim/tcore-rv32imc/rtl/core/cache/dcache.sv /home/kerim/tcore-rv32imc/rtl/core/cache/icache.sv /home/kerim/tcore-rv32imc/rtl/core/cache/plru.sv /home/kerim/tcore-rv32imc/rtl/core/mul_div/division.sv /home/kerim/tcore-rv32imc/rtl/core/mul_div/sequential_multiplier.sv  /home/kerim/tcore-rv32imc/rtl/periph/uart.sv /home/kerim/tcore-rv32imc/rtl/periph/uart_rx.sv /home/kerim/tcore-rv32imc/rtl/periph/uart_tx.sv /home/kerim/tcore-rv32imc/rtl/ram/sp_bram.sv /home/kerim/tcore-rv32imc/rtl/wrapper/ram.sv /home/kerim/tcore-rv32imc/rtl/wrapper/simpleuart.v /home/kerim/tcore-rv32imc/rtl/wrapper/teknofest_wrapper.v /home/kerim/tcore-rv32imc/rtl/tb/tb_wrapper.v +define+
+Model Technology ModelSim - Intel FPGA Edition vlog 2020.1 Compiler 2020.02 Feb 28 2020
+Start time: 04:39:07 on Feb 03,2025
+vlog -work work -sv -suppress vlog-2583 -suppress vopt-8386 -suppress vlog-2275 -svinputport=relaxed "+acc" "+incdir+/home/kerim/tcore-rv32imc/rtl/include/" /home/kerim/tcore-rv32imc/rtl/pkg/tcore_param.sv /home/kerim/tcore-rv32imc/rtl/core/alu.sv /home/kerim/tcore-rv32imc/rtl/core/compressed_decoder.sv /home/kerim/tcore-rv32imc/rtl/core/control_unit.sv /home/kerim/tcore-rv32imc/rtl/core/cpu.sv /home/kerim/tcore-rv32imc/rtl/core/cs_reg_file.sv /home/kerim/tcore-rv32imc/rtl/core/extend.sv /home/kerim/tcore-rv32imc/rtl/core/gray_buffer.sv /home/kerim/tcore-rv32imc/rtl/core/hazard_unit.sv /home/kerim/tcore-rv32imc/rtl/core/memory_arbiter.sv /home/kerim/tcore-rv32imc/rtl/core/pma.sv /home/kerim/tcore-rv32imc/rtl/core/ras.sv /home/kerim/tcore-rv32imc/rtl/core/reg_file.sv /home/kerim/tcore-rv32imc/rtl/core/stage1_fetch.sv /home/kerim/tcore-rv32imc/rtl/core/stage2_decode.sv /home/kerim/tcore-rv32imc/rtl/core/stage3_execution.sv /home/kerim/tcore-rv32imc/rtl/core/stage4_memory.sv /home/kerim/tcore-rv32imc/rtl/core/stage5_writeback.sv /home/kerim/tcore-rv32imc/rtl/core/branch_prediction/branch_prediction.sv /home/kerim/tcore-rv32imc/rtl/core/branch_prediction/signed_branch_prediction.sv /home/kerim/tcore-rv32imc/rtl/core/branch_prediction/t_branch_prediction.sv /home/kerim/tcore-rv32imc/rtl/core/branch_prediction/t_gshare.sv /home/kerim/tcore-rv32imc/rtl/core/cache/dcache.sv /home/kerim/tcore-rv32imc/rtl/core/cache/icache.sv /home/kerim/tcore-rv32imc/rtl/core/cache/plru.sv /home/kerim/tcore-rv32imc/rtl/core/mul_div/division.sv /home/kerim/tcore-rv32imc/rtl/core/mul_div/sequential_multiplier.sv /home/kerim/tcore-rv32imc/rtl/periph/uart.sv /home/kerim/tcore-rv32imc/rtl/periph/uart_rx.sv /home/kerim/tcore-rv32imc/rtl/periph/uart_tx.sv /home/kerim/tcore-rv32imc/rtl/ram/sp_bram.sv /home/kerim/tcore-rv32imc/rtl/wrapper/ram.sv /home/kerim/tcore-rv32imc/rtl/wrapper/simpleuart.v /home/kerim/tcore-rv32imc/rtl/wrapper/teknofest_wrapper.v /home/kerim/tcore-rv32imc/rtl/tb/tb_wrapper.v "+define+" 
+-- Compiling package tcore_param
+-- Compiling module alu
+-- Importing package tcore_param
+-- Compiling module riscv_compressed_decoder
+-- Compiling module control_unit
+-- Compiling module cpu
+-- Compiling module cs_reg_file
+-- Compiling module extend
+-- Compiling module gray_align_buffer
+-- Compiling module hazard_unit
+-- Compiling package memory_arbiter_sv_unit
+-- Importing package tcore_param
+-- Compiling module memory_arbiter
+-- Compiling module pma
+-- Compiling package ras_sv_unit
+-- Importing package tcore_param
+-- Compiling module ras
+-- Compiling module reg_file
+-- Compiling module stage1_fetch
+-- Compiling module stage2_decode
+-- Compiling module stage3_execution
+-- Compiling module stage4_memory
+-- Compiling module stage5_writeback
+-- Compiling package branch_prediction_sv_unit
+-- Importing package tcore_param
+-- Compiling module branch_prediction
+-- Compiling package signed_branch_prediction_sv_unit
+-- Importing package tcore_param
+-- Compiling module signed_branch_prediction
+-- Compiling package t_branch_prediction_sv_unit
+-- Importing package tcore_param
+-- Compiling module t_branch_predict
+-- Compiling package t_gshare_sv_unit
+-- Importing package tcore_param
+-- Compiling module t_gshare
+-- Compiling module dcache
+-- Compiling package icache_sv_unit
+-- Importing package tcore_param
+-- Compiling module icache
+-- Compiling module plru
+-- Compiling module divu_int
+-- Compiling module seq_multiplier
+-- Compiling module uart
+-- Compiling module uart_rx
+-- Compiling module uart_tx
+-- Compiling module sp_bram
+-- Compiling module wrapper_ram
+-- Compiling module simpleuart
+-- Compiling module teknofest_wrapper
+-- Compiling module tb_wrapper
+
+Top level modules:
+	branch_prediction
+	signed_branch_prediction
+	t_branch_predict
+	seq_multiplier
+	tb_wrapper
+End time: 04:39:07 on Feb 03,2025, Elapsed time: 0:00:00
+Errors: 0, Warnings: 0, Suppressed Warnings: 4
+vsim -c work.tb_wrapper -do "run 50000ns; quit" -t ns -autofindloop -detectzerodelayloop -iterationlimit=5k -voptargs=+acc=npr
+Reading pref.tcl
+
+# 2020.1
+
+# vsim -c work.tb_wrapper -do "run 50000ns; quit" -t ns -autofindloop -detectzerodelayloop -iterationlimit=5k -voptargs="+acc=npr" 
+# Start time: 04:39:08 on Feb 03,2025
+# Loading sv_std.std
+# Loading work.tb_wrapper
+# Loading work.teknofest_wrapper
+# Loading work.tcore_param
+# Loading work.cpu
+# Loading work.stage1_fetch
+# Loading work.pma
+# Loading work.t_gshare_sv_unit
+# Loading work.t_gshare
+# Loading work.ras_sv_unit
+# Loading work.ras
+# Loading work.gray_align_buffer
+# Loading work.icache_sv_unit
+# Loading work.icache
+# Loading work.sp_bram
+# Loading work.plru
+# Loading work.riscv_compressed_decoder
+# Loading work.stage2_decode
+# Loading work.control_unit
+# Loading work.reg_file
+# Loading work.extend
+# Loading work.stage3_execution
+# Loading work.alu
+# Loading work.mul
+# Loading work.divu_int
+# Loading work.cs_reg_file
+# Loading work.stage4_memory
+# Loading work.dcache
+# Loading work.uart
+# Loading work.uart_tx
+# Loading work.uart_rx
+# Loading work.stage5_writeback
+# Loading work.hazard_unit
+# Loading work.memory_arbiter_sv_unit
+# Loading work.memory_arbiter
+# Loading work.wrapper_ram
+# Loading work.simpleuart
+# Loading work.dadda
+# Loading work.ha
+# Loading work.fa
+# ** Warning: (vsim-2685) [TFMPC] - Too few port connections for 'dpma'.  Expected 4, found 3.
+#    Time: 0 ns  Iteration: 0  Instance: /tb_wrapper/teknofest_wrapper/soc/memory/dpma File: /home/kerim/tcore-rv32imc/rtl/core/stage4_memory.sv Line: 69
+# ** Warning: (vsim-3722) /home/kerim/tcore-rv32imc/rtl/core/stage4_memory.sv(69): [TFMPC] - Missing connection for port 'grand_o'.
+# run 50000ns
+# ** Warning: (vsim-PLI-3408) Too few data words read on line 262 of file "coremark_baremetal_static.mem". Expected 8192, found 261.    : /home/kerim/tcore-rv32imc/rtl/wrapper/ram.sv(56)
+#    Time: 0 ns  Iteration: 0  Region: /tb_wrapper/teknofest_wrapper/main_memory/use_init_file
+#  quit
+# End time: 04:39:18 on Feb 03,2025, Elapsed time: 0:00:10
+# Errors: 0, Warnings: 3
+make[2]: Leaving directory '/home/kerim/tcore-rv32imc'
