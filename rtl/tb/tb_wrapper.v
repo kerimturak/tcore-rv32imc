@@ -20,7 +20,7 @@ module tb_wrapper;
     rst_ni       <= 0;
     program_rx_i <= 1;
     uart_rx_i    <= 1;
-    repeat (2) @(posedge clk_i);
+    #10;
     rst_ni <= 1;
   end
 

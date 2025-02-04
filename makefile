@@ -23,7 +23,7 @@ SV_SOURCES =  $(TCORE_DIR)/rtl/pkg/tcore_param.sv \
               $(wildcard $(TCORE_DIR)/rtl/wrapper/*.sv) \
               $(wildcard $(TCORE_DIR)/rtl/wrapper/*.v)
 
-# 🔹 Test Bench ve Wrapper
+# 🔹 Test Bench ve Wrapper (ModelSim için)
 TB_FILE = $(TCORE_DIR)/rtl/tb/tb_wrapper.v
 TOP_LEVEL = tb_wrapper
 LIBRARY = work
@@ -42,15 +42,19 @@ DUMP_PARSER = $(TCORE_DIR)/sw/dump_parser.py
 # 🔹 RAM İçin Sabit Test Yükleme Dosyası
 MEM_FILE = $(TCORE_DIR)/coremark_baremetal_static.mem
 
-# 🔹 Simülasyon Süresi
+# 🔹 Simülasyon Süresi (ModelSim için)
 SIM_TIME = 20000ns
 
-# 🔹 Varsayılan hedef (Tüm testleri çalıştır)
+# ----------------------------------------------------------------------
+# Hedefler: ModelSim/QuestaSim ile çalıştırma
+# ----------------------------------------------------------------------
+
+# Varsayılan hedef (Tüm testleri ModelSim ile çalıştır)
 all: compile test_all
 
-# 🔹 Tüm Hex Testlerini Çalıştır ve PASS/FAIL Kontrolü Yap (Sırayla)
+# Tüm Hex testlerini sıralı çalıştır (ModelSim)
 test_all: $(HEX_FILES)
-	@echo "🔄 Running all RISC-V tests sequentially..."
+	@echo "🔄 Running all RISC-V tests sequentially (ModelSim)..."
 	@rm -f test_results.txt sim_log.txt  # Önceki test ve logları temizle
 	@for hexfile in $(HEX_FILES); do \
 		echo "▶ Running test with $$hexfile..."; \
@@ -58,7 +62,7 @@ test_all: $(HEX_FILES)
 	done
 	@echo "✅ All tests completed! Check test_results.txt for results."
 
-# 🔹 Tek Bir Testi Çalıştır (Simülatör Çıktısını Ayrı Log'a Yaz, Test İsmini Dahil Et)
+# Tek bir testin çalıştırılması (ModelSim)
 single_test:
 	@echo "🔍 Running test: $(TEST_FILE)"
 	@rm -f $(MEM_FILE)  # Önceki RAM dosyasını temizle
@@ -68,11 +72,11 @@ single_test:
 	@echo -n "[ $(notdir $(TEST_FILE)) ]: " >> test_results.txt  # Test ismini yaz
 	@python3 $(CHECK_SCRIPT) $(PASS_FAIL_ADDR) $(FETCH_LOG) | tee -a test_results.txt  # PASS/FAIL durumunu ekle
 
-# 🔹 ModelSim/QuestaSim ile Komut Satırı (Batch) Modunda Simülasyon Çalıştırma
+# ModelSim/QuestaSim ile Batch modda simülasyon
 simulate: compile
 	$(VSIM) -c $(LIBRARY).$(TOP_LEVEL) -do "run $(SIM_TIME); quit" -t ns -voptargs=+acc=npr
 
-# 🔹 ModelSim/QuestaSim ile GUI Modunda Simülasyon Çalıştırma
+# ModelSim/QuestaSim ile GUI modunda simülasyon (Eski yöntem)
 simulate_gui: compile
 	@if [ -z "$(TEST_FILE)" ]; then \
 		echo "❌ Error: TEST_FILE is not set! Use 'make simulate_gui TEST_FILE=/path/to/test.hex'"; \
@@ -83,29 +87,63 @@ simulate_gui: compile
 	@cp "$(TEST_FILE)" "$(MEM_FILE)"  # RAM'e yeni test yükle
 	$(VSIM) $(LIBRARY).$(TOP_LEVEL) -do "questa.do" -t ns -voptargs=+acc=npr
 
-# 🔹 SystemVerilog & Verilog Derleme
+# ----------------------------------------------------------------------
+# Yeni Hedefler: Verilator ile çalıştırma
+# ----------------------------------------------------------------------
+# Not: Verilator kullanabilmek için tasarımınızın synthesizable olması
+# ve C++ testbench dosyanızın (örneğin, tb_wrapper.cpp) mevcut olması gerekir.
+# Aşağıda, Verilator ile simülasyon yapacak hedefler eklenmiştir.
+
+# Verilator ile derleme için C++ testbench dosyasının yolu (düzenleyin gerekirse)
+VERILATOR_TB = $(TCORE_DIR)/tb_wrapper.cpp
+
+# Verilator ile simülasyonu derleyip çalıştırma
+simulate_verilator: compile_verilator
+	@echo "🔍 Running simulation with Verilator..."
+	@./obj_dir/V$(TOP_LEVEL) | tee -a test_results.txt
+
+# Verilator ile derleme
+compile_verilator:
+	@echo "Compiling design with Verilator..."
+	verilator --cc $(SV_SOURCES) $(TB_FILE) --exe $(VERILATOR_TB) --top-module $(TOP_LEVEL) --trace --trace-fst --trace-structs --build -I$(TCORE_DIR)/rtl/include --timing
+
+# Tek bir testin Verilator ile çalıştırılması
+single_test_verilator:
+	@echo "🔍 Running test with Verilator: $(TEST_FILE)"
+	@rm -f $(MEM_FILE)
+	@cp "$(TEST_FILE)" "$(MEM_FILE)"
+	@make simulate_verilator
+	@python3 $(DUMP_PARSER) $(TEST_FILE:.hex=.dump) > /dev/null 2>&1
+	@echo -n "[ $(notdir $(TEST_FILE)) ] (Verilator): " >> test_results.txt
+	@python3 $(CHECK_SCRIPT) $(PASS_FAIL_ADDR) $(FETCH_LOG) | tee -a test_results.txt
+
+# ----------------------------------------------------------------------
+# Derleme (ModelSim/QuestaSim için)
 $(WORK_DIR):
 	$(VLIB) $(WORK_DIR)
 
 compile: $(WORK_DIR)
 	$(VLOG) -work $(WORK_DIR) $(VLOG_OPTS) $(SV_SOURCES) $(TB_FILE) $(DEFINE_MACROS)
-#$(VOPT) $(VOPT_OPTS) $(LIBRARY).$(TOP_LEVEL)
+	#$(VOPT) $(VOPT_OPTS) $(LIBRARY).$(TOP_LEVEL)
 
-# 🔹 Optimizasyon (İsteğe Bağlı)
+# ----------------------------------------------------------------------
+# Optimizasyon (isteğe bağlı, ModelSim/QuestaSim için)
 #optimize: compile
-#$(VOPT) -o $(WORK_DIR).$(TOP_LEVEL) $(LIBRARY).$(TOP_LEVEL)
+#	$(VOPT) -o $(WORK_DIR).$(TOP_LEVEL) $(LIBRARY).$(TOP_LEVEL)
 
-# 🔹 Dump'tan PASS ve FAIL Adreslerini Çıkar
+# ----------------------------------------------------------------------
+# Dump'tan PASS ve FAIL Adreslerini Çıkar
 extract:
 	python3 $(DUMP_PARSER) $(DUMP_FILE) > /dev/null 2>&1
 
-# 🔹 Test Sonucunu Kontrol Et
+# Test Sonucunu Kontrol Et
 check: extract
 	python3 $(CHECK_SCRIPT) $(PASS_FAIL_ADDR) $(FETCH_LOG) > /dev/null 2>&1
 
-# 🔹 Geçici Dosyaları Temizle
+# ----------------------------------------------------------------------
+# Temizlik
 clean:
 	rm -rf $(WORK_DIR)
 	rm -f transcript vsim.wlf modelsim.ini test_results.txt fetch_log.txt pass_fail_addr.txt sim_log.txt
 
-.PHONY: all compile simulate simulate_gui test_all single_test optimize extract check clean
+.PHONY: all compile simulate simulate_gui simulate_verilator single_test single_test_verilator optimize extract check clean

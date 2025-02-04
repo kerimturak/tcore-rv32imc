@@ -192,9 +192,9 @@ module t_gshare (
       per_count_predict_miss <= '0;
     end else if (!stall_i && branch_q[1]) begin
       if (!spec_hit_i) begin
-        per_count_predict_miss++;
+        per_count_predict_miss <= per_count_predict_miss+1;
       end else begin
-        per_count_predict_hit++;
+        per_count_predict_hit <= per_count_predict_hit+1;
       end
     end
   end
@@ -208,9 +208,9 @@ module t_gshare (
       per_ras_count_predict_miss <= '0;
     end else if (!stall_i && ras_taken_q[1]) begin
       if (!spec_hit_i) begin
-        per_ras_count_predict_miss++;
+        per_ras_count_predict_miss <= per_ras_count_predict_miss+1;
       end else begin
-        per_ras_count_predict_hit++;
+        per_ras_count_predict_hit <= per_ras_count_predict_hit+1;
       end
     end
   end
