@@ -199,7 +199,6 @@ module alu
     rslt.DIVU   = unsigned_quo;
     rslt.REM    = reminder;
     rslt.REMU   = unsigned_rem;
-
     rslt.LUI    = alu_b_i;
 
     case (op_sel_i)

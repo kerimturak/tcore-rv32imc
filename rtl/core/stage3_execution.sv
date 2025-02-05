@@ -50,16 +50,16 @@ module stage3_execution
     input  logic    [XLEN-1:0] imm_i,
     input  pc_sel_e            pc_sel_i,
     input  alu_op_e            alu_ctrl_i,
-    input exc_type_e         exc_type_i,
-    input instr_type_e       instr_type_i,
+    input exc_type_e           exc_type_i,
+    input instr_type_e         instr_type_i,
     output logic    [XLEN-1:0] write_data_o,
     output logic    [XLEN-1:0] pc_target_o,
     output logic    [XLEN-1:0] alu_result_o,
     output logic               pc_sel_o,
     output logic               alu_stall_o,
     output exc_type_e          exc_type_o,
-    output logic     [XLEN-1:0] mtvec_o,
-    output logic     [XLEN-1:0] mepc_o
+    output logic    [XLEN-1:0] mtvec_o,
+    output logic    [XLEN-1:0] mepc_o
 
 );
 

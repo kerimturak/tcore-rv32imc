@@ -47,7 +47,6 @@ module stage4_memory
   logic                   dcache_miss;
   logic        [XLEN-1:0] pherip_addr;
   logic        [XLEN-1:0] pherip_wdata;
-  //logic [1:0] pherip_awr;  //! memory stage bus operation signals a: active, w: write, r: read
   logic        [     3:0] pherip_sel;
   logic        [XLEN-1:0] pherip_rdata;
   logic                   pherip_valid;
@@ -86,7 +85,6 @@ module stage4_memory
   logic [15:0] selected_halfword;
   always_comb begin : read_data_size_handler
     rd_data = !memregion ? pherip_rdata : dcache_res.data;
-    // Default assignment
     me_data_o = '0;
     // Select the appropriate byte or halfword based on address
     selected_byte = rd_data[(dcache_req.addr[1:0]*8)+:8];

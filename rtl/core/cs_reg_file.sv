@@ -41,12 +41,6 @@ module cs_reg_file
     output logic [XLEN-1:0] mepc_o
 );
 
-  // Unused (veya ileride kullanılacak) sinyaller:
-  logic go_to_trap;
-  logic go_to_trap_q;
-  logic return_trap;
-  logic return_trap_q;
-
   // CSR adres tanımları
   localparam MSTATUS    = 12'h300;
   localparam MTVEC      = 12'h305;
@@ -109,8 +103,6 @@ module cs_reg_file
 
   // Çıkış sinyallerine bağlı bazı durumların (örn. trap geçiş adresi) çıkışa aktarılması
   always_comb begin
-    go_to_trap   = trap_active_i;
-    return_trap  = mepc;  // Trap dönüşü için kullanılabilir
     mtvec_o      = mtvec;
     mepc_o       = mepc;
   end

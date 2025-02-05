@@ -312,6 +312,11 @@ package tcore_param;
   } alu_op_e;
 
   typedef struct packed {
+    logic            taken;
+    logic [XLEN-1:0] pc;
+  } predict_info_t;
+
+  typedef struct packed {
     logic [XLEN-1:0] pc;
     logic [XLEN-1:0] pc4;
     logic [XLEN-1:0] pc2;
@@ -319,6 +324,7 @@ package tcore_param;
     logic            is_comp;
     exc_type_e       exc_type;
     instr_type_e     instr_type;
+    predict_info_t   spec;
   } pipe1_t;
 
   typedef struct packed {
@@ -347,6 +353,7 @@ package tcore_param;
     logic            csr_or_data;
     exc_type_e       exc_type;
     instr_type_e     instr_type;
+    predict_info_t   spec;
   } pipe2_t;
 
   typedef struct packed {
@@ -469,8 +476,4 @@ package tcore_param;
     logic [15:0]         rw;
   } mem_req_t;
 
-  typedef struct packed {
-    logic            taken;
-    logic [XLEN-1:0] pc;
-  } predict_info_t;
 endpackage

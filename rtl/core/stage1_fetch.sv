@@ -62,8 +62,7 @@ module stage1_fetch
   icache_req_t            icache_req;
   logic                   illegal_instr;
   logic                   grand;
-
-  logic          [XLEN-1:0] pc;
+  logic        [XLEN-1:0] pc;
 
   always_ff @(posedge clk_i) begin
     if (!rst_ni) begin
@@ -101,7 +100,6 @@ module stage1_fetch
     pc4_o         = 32'd4 + pc_o;
     pc2_o         = 32'd2 + pc_o;
     buff_req      = '{valid    : fetch_valid, ready    : 1, addr     : pc_o, uncached : uncached};
-    
   end
 
   always_comb begin
@@ -119,18 +117,11 @@ module stage1_fetch
       .grand_o    (grand)
   );
 
-  `ifdef STATIC_PREDICT
-    t_branch_predict
-  `else
-    t_gshare
-  `endif
-    branch_prediction (
+  t_gshare branch_prediction (
       .clk_i        (clk_i),
       .rst_ni       (rst_ni),
       .spec_hit_i   (spec_hit_i),
-    `ifndef STATIC_PREDICT
       .pc_target_i  (pc_target_i),
-    `endif
       .inst_i       (inst_o),
       .stall_i      (!pc_en),
       .is_comp_i    (is_comp_o),
@@ -143,7 +134,7 @@ module stage1_fetch
 
   gray_align_buffer gray_align_buffer (
       .clk_i        (clk_i),
-      .rst_ni        (rst_ni),
+      .rst_ni       (rst_ni),
       .flush_i      (flush_i),
       .buff_req_i   (buff_req),
       .buff_res_o   (buff_res),
@@ -154,7 +145,7 @@ module stage1_fetch
 
   icache icache (
       .clk_i        (clk_i),
-      .rst_ni        (rst_ni),
+      .rst_ni       (rst_ni),
       .flush_i      (flush_i),
       .cache_req_i  (icache_req),
       .cache_res_o  (icache_res),

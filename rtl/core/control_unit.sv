@@ -38,43 +38,39 @@ module control_unit
 
   always_comb begin
     illegal_shift = (instr_type_i == r_sll || instr_type_i == i_srli || instr_type_i == r_sra) && inst_i[25];
-  
     ctrl_o.exc_type = illegal_shift ? ILLEGAL_INSTRUCTION : NO_EXCEPTION;
-
     ctrl_o.alu_in1_sel = instr_type_i == u_auipc ? 2'd2 : (instr_type_i == i_jalr ? 2'b1 : 2'b0);
-
     ctrl_o.ld_op_sign  = !(instr_type_i == i_lhu || instr_type_i == i_lbu) && (instr_type_i == i_lh || instr_type_i == i_lb);
-
     case (instr_type_i)
-      r_add, i_lb, i_lh, i_lw, i_lbu, 
+      r_add, i_lb, i_lh, i_lw, i_lbu,
       i_lhu, i_addi, s_sb, s_sh, s_sw,
-      b_beq, b_bne, b_blt, b_bge, b_bltu, 
-      b_bgeu, u_jal, i_jalr:                                            ctrl_o.alu_ctrl = OP_ADD;
-      r_sub:                                                            ctrl_o.alu_ctrl = OP_SUB;
-      r_sll, i_slli:                                                    ctrl_o.alu_ctrl = OP_SLL;
-      r_slt, i_slti:                                                    ctrl_o.alu_ctrl = OP_SLT;
-      r_sltu, i_sltiu:                                                  ctrl_o.alu_ctrl = OP_SLTU;
-      r_xor, i_xori:                                                    ctrl_o.alu_ctrl = OP_XOR;
-      r_srl, i_srli:                                                    ctrl_o.alu_ctrl = OP_SRL;
-      r_sra, i_srai:                                                    ctrl_o.alu_ctrl = OP_SRA;
-      r_or, i_ori:                                                      ctrl_o.alu_ctrl = OP_OR;
-      r_and, i_andi:                                                    ctrl_o.alu_ctrl = OP_AND;
-      r_mul:                                                            ctrl_o.alu_ctrl = OP_MUL;
-      r_mulh:                                                           ctrl_o.alu_ctrl = OP_MULH;
-      r_mulhsu:                                                         ctrl_o.alu_ctrl = OP_MULHSU;
-      r_mulhu:                                                          ctrl_o.alu_ctrl = OP_MULHU;
-      r_div:                                                            ctrl_o.alu_ctrl = OP_DIV;
-      r_divu:                                                           ctrl_o.alu_ctrl = OP_DIVU;  // roundin
-      r_rem:                                                            ctrl_o.alu_ctrl = OP_REM;
-      r_remu:                                                           ctrl_o.alu_ctrl = OP_REMU;
-      u_lui:                                                            ctrl_o.alu_ctrl = OP_LUI;
-      CSR_RW:                                                           ctrl_o.alu_ctrl = OP_CSRRW;
-      CSR_RS:                                                           ctrl_o.alu_ctrl = OP_CSRRS;
-      CSR_RC:                                                           ctrl_o.alu_ctrl = OP_CSRRC;
-      CSR_RWI:                                                          ctrl_o.alu_ctrl = OP_CSRRWI;
-      CSR_RSI:                                                          ctrl_o.alu_ctrl = OP_CSRRSI;
-      CSR_RCI:                                                          ctrl_o.alu_ctrl = OP_CSRRCI;
-      default:                                                          ctrl_o.alu_ctrl = OP_ADD;
+      b_beq, b_bne, b_blt, b_bge, b_bltu,
+      b_bgeu, u_jal, i_jalr:               ctrl_o.alu_ctrl = OP_ADD;
+      r_sub:                               ctrl_o.alu_ctrl = OP_SUB;
+      r_sll, i_slli:                       ctrl_o.alu_ctrl = OP_SLL;
+      r_slt, i_slti:                       ctrl_o.alu_ctrl = OP_SLT;
+      r_sltu, i_sltiu:                     ctrl_o.alu_ctrl = OP_SLTU;
+      r_xor, i_xori:                       ctrl_o.alu_ctrl = OP_XOR;
+      r_srl, i_srli:                       ctrl_o.alu_ctrl = OP_SRL;
+      r_sra, i_srai:                       ctrl_o.alu_ctrl = OP_SRA;
+      r_or, i_ori:                         ctrl_o.alu_ctrl = OP_OR;
+      r_and, i_andi:                       ctrl_o.alu_ctrl = OP_AND;
+      r_mul:                               ctrl_o.alu_ctrl = OP_MUL;
+      r_mulh:                              ctrl_o.alu_ctrl = OP_MULH;
+      r_mulhsu:                            ctrl_o.alu_ctrl = OP_MULHSU;
+      r_mulhu:                             ctrl_o.alu_ctrl = OP_MULHU;
+      r_div:                               ctrl_o.alu_ctrl = OP_DIV;
+      r_divu:                              ctrl_o.alu_ctrl = OP_DIVU;  // roundin
+      r_rem:                               ctrl_o.alu_ctrl = OP_REM;
+      r_remu:                              ctrl_o.alu_ctrl = OP_REMU;
+      u_lui:                               ctrl_o.alu_ctrl = OP_LUI;
+      CSR_RW:                              ctrl_o.alu_ctrl = OP_CSRRW;
+      CSR_RS:                              ctrl_o.alu_ctrl = OP_CSRRS;
+      CSR_RC:                              ctrl_o.alu_ctrl = OP_CSRRC;
+      CSR_RWI:                             ctrl_o.alu_ctrl = OP_CSRRWI;
+      CSR_RSI:                             ctrl_o.alu_ctrl = OP_CSRRSI;
+      CSR_RCI:                             ctrl_o.alu_ctrl = OP_CSRRCI;
+      default:                             ctrl_o.alu_ctrl = OP_ADD;
     endcase
 
     case (instr_type_i)

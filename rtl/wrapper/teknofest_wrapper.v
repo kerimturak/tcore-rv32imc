@@ -123,7 +123,7 @@ module teknofest_wrapper (
       .NB_COL   (NUMS_BYTE),
       .COL_WIDTH(8),
       .RAM_DEPTH(RAM_DEPTH),
-      .INIT_FILE("coremark_baremetal_static.mem")
+      .INIT_FILE("test.mem")
   ) main_memory (
       .clk_i          (clk_o),
       .rst_ni         (rst_ni),

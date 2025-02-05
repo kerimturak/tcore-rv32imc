@@ -36,7 +36,6 @@ module stage2_decode
     input  logic             rf_rw_en_i,
     input exc_type_e         exc_type_i,
     input instr_type_e       instr_type_i,
-
     output logic  [XLEN-1:0] r1_data_o,
     output logic  [XLEN-1:0] r2_data_o,
     output ctrl_t            ctrl_o,

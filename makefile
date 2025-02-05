@@ -1,7 +1,7 @@
 # 🔹 İşlemci ve Test Dizini (Tam Yollar)
 HOME_DIR = /home/kerim
 TCORE_DIR = $(HOME_DIR)/tcore-rv32imc
-ISA_TESTS_DIR = $(HOME_DIR)/riscv/tests/riscv-tests/isa
+ISA_TESTS_DIR = $(TCORE_DIR)/tests/riscv-tests/isa
 HEX_FILES = $(wildcard $(ISA_TESTS_DIR)/*.hex)
 
 # 🔹 ModelSim/QuestaSim Ayarları (Hızlandırma İçin Optimize Edildi)
@@ -40,7 +40,7 @@ CHECK_SCRIPT = $(TCORE_DIR)/sw/check_pass_fail.py
 DUMP_PARSER = $(TCORE_DIR)/sw/dump_parser.py
 
 # 🔹 RAM İçin Sabit Test Yükleme Dosyası
-MEM_FILE = $(TCORE_DIR)/coremark_baremetal_static.mem
+MEM_FILE = $(TCORE_DIR)/test.mem
 
 # 🔹 Simülasyon Süresi (ModelSim için)
 SIM_TIME = 20000ns

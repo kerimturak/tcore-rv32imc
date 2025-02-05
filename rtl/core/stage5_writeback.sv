@@ -68,7 +68,6 @@ module stage5_writeback
       default: trap_cause_o = '1;
     endcase
 
-
     if (trap_active_o) begin
       wb_pc_o = mtvec_i;
     end
