@@ -1,8 +1,23 @@
 # 🔹 İşlemci ve Test Dizini (Tam Yollar)
-HOME_DIR = /home/kerim
-TCORE_DIR = $(HOME_DIR)/tcore-rv32imc
-ISA_TESTS_DIR = $(TCORE_DIR)/tests/riscv-tests/isa
-HEX_FILES = $(wildcard $(ISA_TESTS_DIR)/*.hex)
+HOME_DIR         = /home/kerim
+TCORE_DIR        = $(HOME_DIR)/tcore-rv32imc
+
+# ISA testlerinin bulunduğu dizin
+ISA_TESTS_DIR    = $(TCORE_DIR)/tests/riscv-tests/isa
+
+# Imperas ve riscv-arch-test tabanlı HEX dosyalarının bulunduğu dizinler
+IMPERAS_HEX_DIR  = $(TCORE_DIR)/tests/imperas-riscv-tests/work/rv32i_m/I/hex \
+									 $(TCORE_DIR)/tests/imperas-riscv-tests/work/rv32i_m/M/hex \
+									 $(TCORE_DIR)/tests/imperas-riscv-tests/work/rv32i_m/C/hex
+ARCH_HEX_DIR     = $(TCORE_DIR)/tests/riscv-arch-test/work/rv32i_m/I/hex \
+									 $(TCORE_DIR)/tests/riscv-arch-test/work/rv32i_m/M/hex \
+									 $(TCORE_DIR)/tests/riscv-arch-test/work/rv32i_m/C/hex
+
+# Tüm HEX dosyalarını bir araya getiren değişken:
+HEX_FILES = $(wildcard $(IMPERAS_HEX_DIR)/*.hex) \
+            $(wildcard $(ARCH_HEX_DIR)/*.hex) \
+            $(wildcard $(ISA_TESTS_DIR)/*.hex)
+
 
 # 🔹 ModelSim/QuestaSim Ayarları (Hızlandırma İçin Optimize Edildi)
 INC_FILE = $(TCORE_DIR)/rtl/include/
