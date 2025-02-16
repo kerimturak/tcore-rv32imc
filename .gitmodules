@@ -1,3 +1,9 @@
 [submodule "tests/riscv-arch-test"]
 	path = tests/riscv-arch-test
 	url = https://github.com/kerimturak/riscv-arch-test.git
+[submodule "tests/riscv-tests"]
+	path = tests/riscv-tests
+	url = https://github.com/kerimturak/riscv-tests.git
+[submodule "tests/imperas-riscv-tests"]
+	path = tests/imperas-riscv-tests
+	url = https://github.com/kerimturak/imperas-riscv-tests.git
