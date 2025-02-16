@@ -1,11 +1,9 @@
-# 🔹 İşlemci ve Test Dizini (Tam Yollar)
-HOME_DIR         = /home/kerim
-TCORE_DIR        = $(HOME_DIR)/tcore-rv32imc
+# İşlemci ve Test Dizini (Tam Yollar)
+HOME_DIR         = .
+TCORE_DIR        = .
 
-# ISA testlerinin bulunduğu dizin
+# ISA testlerinin ve Imperas ve riscv-arch-test tabanlı HEX dosyalarının bulunduğu dizinler
 ISA_TESTS_DIR    = $(TCORE_DIR)/tests/riscv-tests/isa
-
-# Imperas ve riscv-arch-test tabanlı HEX dosyalarının bulunduğu dizinler
 IMPERAS_HEX_DIR  = $(TCORE_DIR)/tests/imperas-riscv-tests/work/rv32i_m/I/hex \
 									 $(TCORE_DIR)/tests/imperas-riscv-tests/work/rv32i_m/M/hex \
 									 $(TCORE_DIR)/tests/imperas-riscv-tests/work/rv32i_m/C/hex
@@ -19,13 +17,13 @@ HEX_FILES = $(wildcard $(IMPERAS_HEX_DIR)/*.hex) \
             $(wildcard $(ISA_TESTS_DIR)/*.hex)
 
 
-# 🔹 ModelSim/QuestaSim Ayarları (Hızlandırma İçin Optimize Edildi)
+# ModelSim/QuestaSim Ayarları (Hızlandırma İçin Optimize Edildi)
 INC_FILE = $(TCORE_DIR)/rtl/include/
 SUPPRESS_CMD = -suppress vlog-2583 -suppress vopt-8386 -suppress vlog-2275 -svinputport=relaxed
 VLOG_OPTS = -sv ${SUPPRESS_CMD} +acc=npr +incdir+${INC_FILE} -work $(WORK_DIR) -mfcu -quiet
 DEFINE_MACROS = +define+
 
-# 🔹 SystemVerilog & Verilog Kaynak Dosyaları
+# SystemVerilog & Verilog Kaynak Dosyaları
 SV_SOURCES =  $(TCORE_DIR)/rtl/pkg/tcore_param.sv \
               $(wildcard $(TCORE_DIR)/rtl/core/*.sv) \
               $(wildcard $(TCORE_DIR)/rtl/core/branch_prediction/*.sv) \
@@ -38,7 +36,7 @@ SV_SOURCES =  $(TCORE_DIR)/rtl/pkg/tcore_param.sv \
               $(wildcard $(TCORE_DIR)/rtl/wrapper/*.sv) \
               $(wildcard $(TCORE_DIR)/rtl/wrapper/*.v)
 
-# 🔹 Test Bench ve Wrapper (ModelSim için)
+# Test Bench ve Wrapper (ModelSim için)
 TB_FILE = $(TCORE_DIR)/rtl/tb/tb_wrapper.v
 TOP_LEVEL = tb_wrapper
 LIBRARY = work
@@ -48,16 +46,16 @@ VOPT = vopt
 VLIB = vlib
 WORK_DIR = work
 
-# 🔹 Dump & Fetch Log Dosyaları
+# Dump & Fetch Log Dosyaları
 FETCH_LOG = fetch_log.txt
 PASS_FAIL_ADDR = pass_fail_addr.txt
 CHECK_SCRIPT = $(TCORE_DIR)/sw/check_pass_fail.py
 DUMP_PARSER = $(TCORE_DIR)/sw/dump_parser.py
 
-# 🔹 RAM İçin Sabit Test Yükleme Dosyası
+# RAM İçin Sabit Test Yükleme Dosyası
 MEM_FILE = $(TCORE_DIR)/test.mem
 
-# 🔹 Simülasyon Süresi (ModelSim için)
+# Simülasyon Süresi (ModelSim için)
 SIM_TIME = 20000ns
 
 # ----------------------------------------------------------------------
@@ -67,7 +65,23 @@ SIM_TIME = 20000ns
 # Varsayılan hedef (Tüm testleri ModelSim ile çalıştır)
 all: compile test_all
 
+# Derleme (ModelSim/QuestaSim için)
+$(WORK_DIR):
+	$(VLIB) $(WORK_DIR)
+
+compile: $(WORK_DIR)
+	$(VLOG) -work $(WORK_DIR) $(VLOG_OPTS) $(SV_SOURCES) $(TB_FILE) $(DEFINE_MACROS)
+	#$(VOPT) $(VOPT_OPTS) $(LIBRARY).$(TOP_LEVEL)
+
+# ----------------------------------------------------------------------
+# Optimizasyon (isteğe bağlı, ModelSim/QuestaSim için)
+#optimize: compile
+#	$(VOPT) -o $(WORK_DIR).$(TOP_LEVEL) $(LIBRARY).$(TOP_LEVEL)
+
 # Tüm Hex testlerini sıralı çalıştır (ModelSim)
+compile_all_test:
+	$(MAKE) -C $(TCORE_DIR)/tests/riscv-tests isa
+
 test_all: $(HEX_FILES)
 	@echo "🔄 Running all RISC-V tests sequentially (ModelSim)..."
 	@rm -f test_results.txt sim_log.txt  # Önceki test ve logları temizle
@@ -133,18 +147,7 @@ single_test_verilator:
 	@python3 $(CHECK_SCRIPT) $(PASS_FAIL_ADDR) $(FETCH_LOG) | tee -a test_results.txt
 
 # ----------------------------------------------------------------------
-# Derleme (ModelSim/QuestaSim için)
-$(WORK_DIR):
-	$(VLIB) $(WORK_DIR)
 
-compile: $(WORK_DIR)
-	$(VLOG) -work $(WORK_DIR) $(VLOG_OPTS) $(SV_SOURCES) $(TB_FILE) $(DEFINE_MACROS)
-	#$(VOPT) $(VOPT_OPTS) $(LIBRARY).$(TOP_LEVEL)
-
-# ----------------------------------------------------------------------
-# Optimizasyon (isteğe bağlı, ModelSim/QuestaSim için)
-#optimize: compile
-#	$(VOPT) -o $(WORK_DIR).$(TOP_LEVEL) $(LIBRARY).$(TOP_LEVEL)
 
 # ----------------------------------------------------------------------
 # Dump'tan PASS ve FAIL Adreslerini Çıkar
