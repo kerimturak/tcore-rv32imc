@@ -26,15 +26,15 @@
 module cpu
   import tcore_param::*;
 (
-    input  logic                       clk_i,
-    input  logic                       rst_ni,
-    output iomem_req_t                 iomem_req_o,
-    input  iomem_res_t                 iomem_res_i,
-    output logic                       uart_tx_o,
-    input  logic                       uart_rx_i
+    input  logic       clk_i,
+    input  logic       rst_ni,
+    output iomem_req_t iomem_req_o,
+    input  iomem_res_t iomem_res_i,
+    output logic       uart_tx_o,
+    input  logic       uart_rx_i
 );
 
-  logic                     stall_all;
+  logic                  [4:0]   stall_all;
   ilowX_req_t               lx_ireq;
   dlowX_res_t               lx_dres;
   dlowX_req_t               lx_dreq;
@@ -99,11 +99,12 @@ module cpu
   logic          [     4:0] exc_array;
   logic                     priority_flush;
 
-  stage1_fetch fetch (
+  fetch #(
+      .RESET_VECTOR(RESET_VECTOR)
+  ) fetch (
       .clk_i        (clk_i),
       .rst_ni       (rst_ni),
       .stall_i      (stall_all),
-      .fe_stall_i   (fe_stall),
       .flush_i      (fe_flush_cache),
       .lx_ires_i    (lx_ires),
       .pc_target_i  (ex_pc_target_last),
@@ -134,12 +135,12 @@ module cpu
   end
 
   always_comb begin
-    de_enable = !(stall_all || de_stall);
-    de_flush_en = priority_flush || stall_all ? 1'b0 : de_flush;
+    de_enable = !(|stall_all[4:1]); // de_stall added
+    de_flush_en = priority_flush || (|stall_all[4:2]) ? 1'b0 : de_flush;
     fe_flush_cache = pipe2.instr_type == fence_i;
   end
 
-  stage2_decode decode (
+  decode decode (
       .clk_i       (clk_i),
       .rst_ni      (rst_ni),
       .fwd_a_i     (de_fwd_a),
@@ -161,7 +162,7 @@ module cpu
   always_ff @(posedge clk_i) begin
     if (!rst_ni || ex_flush_en) begin
       pipe2 <= '{exc_type_e: NO_EXCEPTION, instr_type: instr_invalid, default: 0, alu_ctrl: OP_ADD, pc_sel: NO_BJ, rw_size: 0};
-    end else if (!stall_all) begin
+    end else if (!(|stall_all[4:2])) begin
       pipe2 <= '{
           pc          : pipe1.pc,
           pc4         : pipe1.pc4,
@@ -194,32 +195,32 @@ module cpu
   end
 
   always_comb begin
-    ex_flush_en = priority_flush || stall_all ? 1'b0 : ex_flush;
+    ex_flush_en = priority_flush || (|stall_all[4:2]) ? 1'b0 : ex_flush;
     if (alu_exc_type != NO_EXCEPTION) begin
       ex_exc_type = alu_exc_type;
     end else if (pipe2.rw_size != 0) begin
       if (pipe2.wr_en) begin
         unique case (pipe2.rw_size)
-          2'b10: ex_exc_type = ex_alu_result[0] ? STORE_MISALIGNED : NO_EXCEPTION;
-          2'b11:      ex_exc_type = (ex_alu_result[1] | ex_alu_result[0]) ? STORE_MISALIGNED : NO_EXCEPTION;
-          default:   ex_exc_type = NO_EXCEPTION;
+          2'b10:   ex_exc_type = ex_alu_result[0] ? STORE_MISALIGNED : NO_EXCEPTION;
+          2'b11:   ex_exc_type = (ex_alu_result[1] | ex_alu_result[0]) ? STORE_MISALIGNED : NO_EXCEPTION;
+          default: ex_exc_type = NO_EXCEPTION;
         endcase
       end else begin
         unique case (pipe2.rw_size)
-          2'b10: ex_exc_type = ex_alu_result[0] ? LOAD_MISALIGNED : NO_EXCEPTION;
-          2'b11:      ex_exc_type = (ex_alu_result[1] | ex_alu_result[0]) ? LOAD_MISALIGNED : NO_EXCEPTION;
-          default:   ex_exc_type = NO_EXCEPTION;
+          2'b10:   ex_exc_type = ex_alu_result[0] ? LOAD_MISALIGNED : NO_EXCEPTION;
+          2'b11:   ex_exc_type = (ex_alu_result[1] | ex_alu_result[0]) ? LOAD_MISALIGNED : NO_EXCEPTION;
+          default: ex_exc_type = NO_EXCEPTION;
         endcase
       end
     end else begin
       ex_exc_type = NO_EXCEPTION;
     end
-    ex_rd_csr = pipe2.rd_csr & !stall_all;
-    ex_wr_csr = pipe2.wr_csr & !stall_all;
+    ex_rd_csr = pipe2.rd_csr & !(|stall_all[4:2]);
+    ex_wr_csr = pipe2.wr_csr & !(|stall_all[4:2]);
   end
 
 
-  stage3_execution execution (
+  execution execution (
       .clk_i        (clk_i),
       .rst_ni       (rst_ni),
       .fwd_a_i      (ex_fwd_a),
@@ -272,7 +273,7 @@ module cpu
   always_ff @(posedge clk_i) begin
     if (!rst_ni) begin
       pipe3 <= '{exc_type_e: NO_EXCEPTION, default: 0, rw_size: 0};
-    end else if (!stall_all) begin
+    end else if (!(|stall_all[4:2])) begin
       pipe3 <= '{
           pc4         : pipe2.pc4,
           pc2         : pipe2.pc2,
@@ -292,7 +293,7 @@ module cpu
     end
   end
 
-  stage4_memory memory (
+  memory memory (
       .clk_i        (clk_i),
       .rst_ni       (rst_ni),
       .stall_i      (stall_all),
@@ -313,7 +314,7 @@ module cpu
   always_ff @(posedge clk_i) begin
     if (!rst_ni) begin
       pipe4 <= '{exc_type_e: NO_EXCEPTION, default: 0};
-    end else if (!stall_all) begin
+    end else if (!(|stall_all[4:2])) begin
       pipe4 <= '{
           pc4         : pipe3.pc4,
           pc2         : pipe3.pc2,
@@ -330,7 +331,7 @@ module cpu
     end
   end
 
-  stage5_writeback writeback (
+  writeback writeback (
       .data_sel_i   (pipe4.result_src),
       .pc4_i        (pipe4.pc4),
       .pc2_i        (pipe4.pc2),
@@ -385,7 +386,11 @@ module cpu
   );
 
   always_comb begin
-    stall_all = fe_imiss_stall || me_dmiss_stall || ex_alu_stall;
+    stall_all[0] = fe_stall;
+    stall_all[1] = de_stall;
+    stall_all[2] = fe_imiss_stall;
+    stall_all[3] = me_dmiss_stall;
+    stall_all[4] = ex_alu_stall;
     exc_array = '0;
     exc_array = {pipe4.exc_type != NO_EXCEPTION, pipe3.exc_type != NO_EXCEPTION, pipe2.exc_type != NO_EXCEPTION, pipe1.exc_type != NO_EXCEPTION, fe_exc_type != NO_EXCEPTION};
 

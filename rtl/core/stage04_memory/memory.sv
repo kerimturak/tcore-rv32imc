@@ -23,12 +23,12 @@
 
 `timescale 1ns / 1ps
 `include "tcore_defines.svh"
-module stage4_memory
+module memory
   import tcore_param::*;
 (
     input  logic                  clk_i,
     input  logic                  rst_ni,
-    input  logic                  stall_i,
+    input  logic       [     4:0] stall_i,
     input  logic                  wr_en_i,
     input  logic       [     1:0] rw_size_i,
     input  logic       [XLEN-1:0] alu_result_i,
@@ -119,7 +119,7 @@ module stage4_memory
     if (!rst_ni) begin
       $fclose(log_file);
       log_file = $fopen("memory_log.txt", "w");
-    end else if (!stall_i && dcache_req.valid) begin
+    end else if (!(|stall_i[4:2]) && dcache_req.valid) begin
       if (dcache_req.rw) begin
         if (dcache_res.valid) begin
           $fwrite(log_file, "%0h:    %h\n", dcache_req.addr, dcache_req.data);
@@ -161,9 +161,9 @@ module stage4_memory
 
 
   always_comb begin
-    pherip_valid = !memregion && !stall_i;
+    pherip_valid = !memregion && !(|stall_i[4:2]);
     pherip_addr  = !memregion ? alu_result_i : '0;
-    pherip_sel   = !memregion && !stall_i ? 4'b1111 : 4'b0000;
+    pherip_sel   = !memregion && !(|stall_i[4:2]) ? 4'b1111 : 4'b0000;
     pherip_wdata = !memregion ? write_data_i : '0;
   end
   uart uart_inst (

@@ -23,18 +23,19 @@
 
 `timescale 1ns / 1ps
 `include "tcore_defines.svh"
-module stage1_fetch
+module fetch
   import tcore_param::*;
-(
+#(
+    parameter RESET_VECTOR = 32'h8000_0000
+) (
     input  logic                     clk_i,
     input  logic                     rst_ni,
-    input  logic                     stall_i,
-    input  logic                     fe_stall_i,
+    input  logic          [     4:0] stall_i,
     input  logic                     flush_i,
     input  ilowX_res_t               lx_ires_i,
     input  logic          [XLEN-1:0] pc_target_i,
     input  logic                     spec_hit_i,
-    input  logic [4:0]               exc_array_i,
+    input  logic          [     4:0] exc_array_i,
     input  logic          [XLEN-1:0] wb_pc_i,
     input  logic          [XLEN-1:0] mepc_i,
     output predict_info_t            spec_o,
@@ -52,62 +53,52 @@ module stage1_fetch
   logic                   fetch_valid;
   logic        [XLEN-1:0] pc_next;
   logic                   pc_en;
-  logic                   buffer_miss;
   logic                   uncached;
   logic                   memregion;
-  gbuff_res_t             buff_res;
-  
-  icache_req_t            buff_req;
+  abuff_res_t             buff_res;
+  abuff_req_t             buff_req;
   icache_res_t            icache_res;
   icache_req_t            icache_req;
   logic                   illegal_instr;
   logic                   grand;
   logic        [XLEN-1:0] pc;
+  blowX_res_t             buff_lowX_res;
 
   always_ff @(posedge clk_i) begin
     if (!rst_ni) begin
-      pc <= 32'h8000_0000;
+      pc <= RESET_VECTOR;
     end else if (pc_en) begin
       pc <= fetch_valid ? pc_next : pc;
     end
   end
 
   always_comb begin
+    // writeback stage'ine ulaşan bir exeption varsa handler pc'sini writebackten al
     pc_o = exc_array_i[4] ? wb_pc_i : pc;
 
-    if (buff_res.valid) begin
-      instr_type_o = resolved_instr_type(inst_o);
-    end else begin
-      instr_type_o = Null_Instr_Type;
-    end
-    fetch_valid   = !flush_i && (!spec_hit_i && ~|exc_array_i[3:2] ? 1 : ~(|exc_array_i[3:0])); // || trap
-    exc_type_o = NO_EXCEPTION;
+    if (buff_res.valid) instr_type_o = resolved_instr_type(inst_o);
+    else instr_type_o = Null_Instr_Type;
 
-    if (!grand && fetch_valid) begin
-      exc_type_o = INSTR_ACCESS_FAULT;
-    end else if (illegal_instr && buff_res.valid) begin
-      exc_type_o = ILLEGAL_INSTRUCTION;
-    end else if (instr_type_o == ecall) begin
-      exc_type_o = ECALL;
-    end else if (instr_type_o == ebreak) begin
-      exc_type_o = EBREAK;
-    end else begin
-      exc_type_o = NO_EXCEPTION;
-    end
+    fetch_valid = !flush_i && (!spec_hit_i && ~|exc_array_i[3:2] ? 1 : ~(|exc_array_i[3:0]));  // || trap
 
-    pc_en         = !(stall_i || fe_stall_i);
-    imiss_stall_o = (fetch_valid && !buff_res.valid || buffer_miss);
+    // request granted
+    exc_type_o  = NO_EXCEPTION;
+    if (!grand && fetch_valid) exc_type_o = INSTR_ACCESS_FAULT;
+    else if (illegal_instr && buff_res.valid) exc_type_o = ILLEGAL_INSTRUCTION;
+    else if (instr_type_o == ecall) exc_type_o = ECALL;
+    else if (instr_type_o == ebreak) exc_type_o = EBREAK;
+    else exc_type_o = NO_EXCEPTION;
+
+    pc_en         = !(|stall_i[4:2] || stall_i[0]);
+    imiss_stall_o = (fetch_valid && !buff_res.valid);
     pc4_o         = 32'd4 + pc_o;
     pc2_o         = 32'd2 + pc_o;
     buff_req      = '{valid    : fetch_valid, ready    : 1, addr     : pc_o, uncached : uncached};
   end
 
   always_comb begin
-    if (spec_hit_i) begin
-      pc_next = spec_o.taken ? spec_o.pc : (is_comp_o ? pc2_o : pc4_o);
-    end else begin
-      pc_next = pc_target_i;
-    end
+    if (spec_hit_i) pc_next = spec_o.taken ? spec_o.pc : (is_comp_o ? pc2_o : pc4_o);
+    else pc_next = pc_target_i;
   end
 
   pma ipma (
@@ -117,7 +108,7 @@ module stage1_fetch
       .grand_o    (grand)
   );
 
-  t_gshare branch_prediction (
+  gshare_bp branch_prediction (
       .clk_i        (clk_i),
       .rst_ni       (rst_ni),
       .spec_hit_i   (spec_hit_i),
@@ -132,38 +123,24 @@ module stage1_fetch
       .spec_o       (spec_o)
   );
 
-lowX_res_t buff_lowX_res;
+  always_comb begin
+    buff_lowX_res.valid = icache_res.valid;
+    buff_lowX_res.ready = icache_res.ready;
+    buff_lowX_res.blk   = icache_res.blk;
+  end
 
-always_comb begin
-  buff_lowX_res.valid = icache_res.valid;
-  buff_lowX_res.ready = icache_res.ready;
-  buff_lowX_res.blk  = icache_res.blk ;
-end
+  align_buffer align_buffer (
+      .clk_i     (clk_i),
+      .rst_ni    (rst_ni),
+      .flush_i   (flush_i),
+      .buff_req_i(buff_req),
+      .buff_res_o(buff_res),
+      .lowX_res_i(buff_lowX_res),
+      .lowX_req_o(icache_req)
+  );
 
-  gray_align_buffer gray_align_buffer (
-      .clk_i        (clk_i),
-      .rst_ni       (rst_ni),
-      .flush_i      (flush_i),
-      .buff_req_i   (buff_req),
-      .buff_res_o   (buff_res),
-      .buffer_miss_o(buffer_miss),
-      .lowX_res_i   (buff_lowX_res),
-      .lowX_req_o   (icache_req)
-  );
-/*
-  icache icache (
-      .clk_i        (clk_i),
-      .rst_ni       (rst_ni),
-      .flush_i      (flush_i),
-      .cache_req_i  (icache_req),
-      .cache_res_o  (icache_res),
-      .icache_miss_o(icache_miss),
-      .lowX_res_i   (lx_ires_i),
-      .lowX_req_o   (lx_ireq_o)
-  );
-*/
   cache #(
-      .IS_ICACHE(1),
+      .IS_ICACHE  (1),
       .cache_req_t(icache_req_t),
       .cache_res_t(icache_res_t),
       .lowX_req_t (ilowX_req_t),
@@ -189,36 +166,6 @@ end
       .illegal_instr_o(illegal_instr)
   );
 
-
-
-integer log_file;
-
-// Log dosyasını aç
-initial begin
-  log_file = $fopen("fetch_log.txt", "w");
-  if (log_file == 0) begin
-    $display("ERROR: Log file could not be opened!");
-    $finish;
-  end
-end
-
-// Fetch edilen instruction’ları kaydet
-always @(posedge clk_i) begin
-if (!rst_ni) begin
-    $fclose(log_file);
-    log_file = $fopen("fetch_log.txt", "w");
-  end else if (!stall_i && buff_res.valid) begin
-    if (is_comp_o) begin
-      $fwrite(log_file, "%0h:    %h\n", pc_o, buff_res.blk[15:0]); // Sadece PC yazılıyor
-    end else begin
-      $fwrite(log_file, "%0h:    %h\n", pc_o, buff_res.blk); // Sadece PC yazılıyor
-    end
-  end
-end
-
-// Simülasyon bittiğinde dosyayı kapat
-final begin
-  $fclose(log_file);
-end
+  `include "fetch_log.svh"
 
 endmodule

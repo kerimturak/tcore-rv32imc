@@ -23,7 +23,7 @@
 
 `timescale 1ns / 1ps
 `include "tcore_defines.svh"
-module stage3_execution
+module execution
   import tcore_param::*;
 (
     input  logic               clk_i,

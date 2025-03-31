@@ -23,6 +23,8 @@
 
 `timescale 1ns / 1ps
 package tcore_param;
+  localparam RESET_VECTOR = 32'h8000_0000;
+  localparam RAS_SIZE = 8;
   localparam XLEN = 32;
   localparam BLK_SIZE = 128;
 
@@ -507,4 +509,37 @@ package tcore_param;
     logic [BLK_SIZE -1:0] data;
   } iomem_res_t;
 
+
+  typedef struct packed {
+    logic            valid;
+    logic            ready;
+    logic [XLEN-1:0] addr;
+    logic            uncached;
+  } abuff_req_t;
+
+  typedef struct packed {
+    logic        valid;
+    logic        miss;
+    logic        ready;
+    logic [31:0] blk;
+  } abuff_res_t;
+
+
+  typedef struct packed {
+    logic                valid;
+    logic                ready;
+    logic [BLK_SIZE-1:0] blk;
+  } blowX_res_t;
+
+  typedef struct packed {
+    logic            valid;
+    logic            ready;
+    logic [XLEN-1:0] addr;
+    logic            uncached;
+  } blowX_req_t;
+
+
+ localparam PHT_SIZE = 128;  // Pattern History Table size (number of entries)
+  localparam BTB_SIZE = 128;  // Branch Target Buffer size (number of entries)
+  localparam GHR_SIZE = $clog2(PHT_SIZE) + 2;  // Global History logicister size (in bits)
 endpackage

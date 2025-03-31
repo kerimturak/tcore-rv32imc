@@ -25,7 +25,7 @@
 `timescale 1ns / 1ps
 `include "tcore_defines.svh"
 import tcore_param::*;
-module t_gshare (
+module gshare_bp (
     input  logic                 clk_i,
     input  logic                 rst_ni,
     input  logic                 spec_hit_i,
@@ -40,31 +40,28 @@ module t_gshare (
     output predict_info_t        spec_o
 );
 
-  logic [31:0] imm;
-  logic        j_type;
-  logic        jr_type;
-  logic        b_type;
-  logic        ras_taken;
-  logic [ 1:0] ras_taken_q;
-  logic        req_valid;
-  logic [31:0] popped_addr;
-  logic [31:0] pushed_addr;
+  logic          [                 31:0] imm;
+  logic                                  j_type;
+  logic                                  jr_type;
+  logic                                  b_type;
+  logic                                  ras_taken;
+  logic          [                  1:0] ras_taken_q;
+  logic                                  req_valid;
+  logic          [                 31:0] popped_addr;
+  logic          [                 31:0] pushed_addr;
 
   // Global History logicister (GHR)
   // Pattern History Table (PHT) - 2-bit saturating counters
   // Branch Target Buffer (BTB)
 
-  localparam PHT_SIZE = 128;  // Pattern History Table size (number of entries)
-  localparam BTB_SIZE = 128;  // Branch Target Buffer size (number of entries)
-  localparam GHR_SIZE = $clog2(PHT_SIZE) + 2;  // Global History logicister size (in bits)
-  logic          [                 31:0] stage_pc   [     1:0];
-  logic                                  branch_q   [     1:0];
-  logic                                  taken_q    [     1:0];
+  logic          [                 31:0] stage_pc    [     1:0];
+  logic                                  branch_q    [     1:0];
+  logic                                  taken_q     [     1:0];
   predict_info_t                         branch;
   logic          [         GHR_SIZE-1:0] ghr;
-  logic          [                  1:0] pht        [PHT_SIZE];
-  logic          [                 31:0] btb_target [BTB_SIZE];
-  logic          [31:$clog2(PHT_SIZE)+1] btb_pc     [BTB_SIZE];
+  logic          [                  1:0] pht         [PHT_SIZE];
+  logic          [                 31:0] btb_target  [BTB_SIZE];
+  logic          [31:$clog2(PHT_SIZE)+1] btb_pc      [BTB_SIZE];
   logic          [ $clog2(PHT_SIZE)-1:0] pht_rd_idx;
   logic          [ $clog2(PHT_SIZE)-1:0] pht_wr_idx;
   logic          [ $clog2(BTB_SIZE)-1:0] btb_rd_idx;
@@ -72,6 +69,8 @@ module t_gshare (
   logic          [                  1:0] pht_ptr;
   logic          [                  1:0] pht_bit1;
   logic                                  ex_taken;
+  logic                                  restore_ras;
+  logic          [                 31:0] restore_pc;
 
   always_comb begin
     b_type  = inst_i[6:0] == op_b_type;
@@ -89,16 +88,14 @@ module t_gshare (
     req_valid = !spec_hit_i ? 1'b0 :  !stall_i && fetch_valid_i && (j_type || jr_type);
   end
 
-  logic        restore_ras;
-  logic [31:0] restore_pc;
-
   assign restore_pc  = stage_pc[0];
   assign restore_ras = !stall_i && !spec_hit_i && ras_taken_q[0];
 
-  ras ras (
+  ras #(
+      .RAS_SIZE(RAS_SIZE)
+  ) ras (
       .clk_i          (clk_i),
       .rst_ni         (rst_ni),
-      .spec_hit_i     (spec_hit_i),
       .restore_i      (restore_ras),
       .restore_pc_i   (restore_pc),
       .req_valid_i    (req_valid),
@@ -111,12 +108,8 @@ module t_gshare (
       .predict_valid_o(ras_taken)
   );
 
-  logic [$clog2(PHT_SIZE)-1:0] temp_pc_rd_idx;
-  logic [$clog2(PHT_SIZE)-1:0] temp_ghr_rd_idx;
 
   always_comb begin
-    temp_pc_rd_idx = pc_i[$clog2(PHT_SIZE):1];
-    temp_ghr_rd_idx = ghr[$clog2(PHT_SIZE)-1:0];
     pht_rd_idx = pc_i[$clog2(PHT_SIZE):1] ^ ghr[$clog2(PHT_SIZE)-1:0];
     btb_rd_idx = pc_i[$clog2(BTB_SIZE):1];
     pht_wr_idx = stage_pc[1][$clog2(PHT_SIZE):1] ^ ghr[$clog2(PHT_SIZE)-1:0];
@@ -179,38 +172,6 @@ module t_gshare (
         //ghr                     <= ex_taken ? {ghr[GHR_SIZE-2:0], pht_bit1[1]} : {1'b0, pht_ptr >> ghr[GHR_SIZE-1:1]};
         ghr                    <= ex_taken ? {ghr[GHR_SIZE-2:0], pht_bit1[1] & spec_hit_i} : pht_ptr >>> ghr;
 
-      end
-    end
-  end
-
-  logic [31:0] per_count_predict_hit;
-  logic [31:0] per_count_predict_miss;
-
-  always_ff @(posedge clk_i) begin
-    if (!rst_ni) begin
-      per_count_predict_hit  <= '0;
-      per_count_predict_miss <= '0;
-    end else if (!stall_i && branch_q[1]) begin
-      if (!spec_hit_i) begin
-        per_count_predict_miss <= per_count_predict_miss+1;
-      end else begin
-        per_count_predict_hit <= per_count_predict_hit+1;
-      end
-    end
-  end
-
-  logic [31:0] per_ras_count_predict_hit;
-  logic [31:0] per_ras_count_predict_miss;
-
-  always_ff @(posedge clk_i) begin
-    if (!rst_ni) begin
-      per_ras_count_predict_hit  <= '0;
-      per_ras_count_predict_miss <= '0;
-    end else if (!stall_i && ras_taken_q[1]) begin
-      if (!spec_hit_i) begin
-        per_ras_count_predict_miss <= per_ras_count_predict_miss+1;
-      end else begin
-        per_ras_count_predict_hit <= per_ras_count_predict_hit+1;
       end
     end
   end

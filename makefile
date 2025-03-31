@@ -28,11 +28,16 @@ DEFINE_MACROS = +define+
 # 🔹 SystemVerilog & Verilog Kaynak Dosyaları
 SV_SOURCES =  $(TCORE_DIR)/rtl/pkg/tcore_param.sv \
               $(wildcard $(TCORE_DIR)/rtl/core/*.sv) \
-              $(wildcard $(TCORE_DIR)/rtl/core/branch_prediction/*.sv) \
-              $(wildcard $(TCORE_DIR)/rtl/core/cache/*.sv) \
-              $(wildcard $(TCORE_DIR)/rtl/core/mul_div/wallace32x32/*.sv) \
-              $(wildcard $(TCORE_DIR)/rtl/core/mul_div/*.sv) \
-              $(wildcard $(TCORE_DIR)/rtl/core/mul_div/wallace8x8/*.sv) \
+              $(wildcard $(TCORE_DIR)/rtl/core/pmp_pma/*.sv) \
+              $(wildcard $(TCORE_DIR)/rtl/core/stage01_fetch/*.sv) \
+              $(wildcard $(TCORE_DIR)/rtl/core/stage02_decode/*.sv) \
+              $(wildcard $(TCORE_DIR)/rtl/core/stage03_execute/*.sv) \
+              $(wildcard $(TCORE_DIR)/rtl/core/stage03_execute/mul_div/wallace32x32/*.sv) \
+              $(wildcard $(TCORE_DIR)/rtl/core/stage03_execute/mul_div/*.sv) \
+              $(wildcard $(TCORE_DIR)/rtl/core/stage03_execute/mul_div/wallace8x8/*.sv) \
+              $(wildcard $(TCORE_DIR)/rtl/core/stage04_memory/*.sv) \
+              $(wildcard $(TCORE_DIR)/rtl/core/stage05_writeback/*.sv) \
+              $(wildcard $(TCORE_DIR)/rtl/core/mmu/*.sv) \
               $(wildcard $(TCORE_DIR)/rtl/periph/*.sv) \
               $(wildcard $(TCORE_DIR)/rtl/ram/*.sv) \
               $(wildcard $(TCORE_DIR)/rtl/wrapper/*.sv) \

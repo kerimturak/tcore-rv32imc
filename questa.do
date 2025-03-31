@@ -52,9 +52,9 @@ add wave -position insertpoint -radix hexadecimal        -group "WRAPPER" -group
 
 
 ################## ALIGN BUFFER ##################
-add wave -position insertpoint -radix hexadecimal -in       -group "WRAPPER" -group "SOC"  -group "FETCH1" -group "ALIGN BUFFER" -group in       sim:/tb_wrapper/soc/fetch/gray_align_buffer/*
-add wave -position insertpoint -radix hexadecimal -out      -group "WRAPPER" -group "SOC"  -group "FETCH1" -group "ALIGN BUFFER" -group out      sim:/tb_wrapper/soc/fetch/gray_align_buffer/*
-add wave -position insertpoint -radix hexadecimal -internal -group "WRAPPER" -group "SOC"  -group "FETCH1" -group "ALIGN BUFFER" -group internal sim:/tb_wrapper/soc/fetch/gray_align_buffer/*
+add wave -position insertpoint -radix hexadecimal -in       -group "WRAPPER" -group "SOC"  -group "FETCH1" -group "ALIGN BUFFER" -group in       sim:/tb_wrapper/soc/fetch/align_buffer/*
+add wave -position insertpoint -radix hexadecimal -out      -group "WRAPPER" -group "SOC"  -group "FETCH1" -group "ALIGN BUFFER" -group out      sim:/tb_wrapper/soc/fetch/align_buffer/*
+add wave -position insertpoint -radix hexadecimal -internal -group "WRAPPER" -group "SOC"  -group "FETCH1" -group "ALIGN BUFFER" -group internal sim:/tb_wrapper/soc/fetch/align_buffer/*
 
 ################## ICACHE TOP ##################
 add wave -position insertpoint -radix hexadecimal -in       -group "WRAPPER" -group "SOC"  -group "FETCH1" -group "ICACHE" -group in       sim:/tb_wrapper/soc/fetch/icache/*
