@@ -56,7 +56,7 @@ module stage1_fetch
   logic                   uncached;
   logic                   memregion;
   gbuff_res_t             buff_res;
-  logic                   icache_miss;
+  
   icache_req_t            buff_req;
   icache_res_t            icache_res;
   icache_req_t            icache_req;
@@ -132,6 +132,14 @@ module stage1_fetch
       .spec_o       (spec_o)
   );
 
+lowX_res_t buff_lowX_res;
+
+always_comb begin
+  buff_lowX_res.valid = icache_res.valid;
+  buff_lowX_res.ready = icache_res.ready;
+  buff_lowX_res.blk  = icache_res.blk ;
+end
+
   gray_align_buffer gray_align_buffer (
       .clk_i        (clk_i),
       .rst_ni       (rst_ni),
@@ -139,10 +147,10 @@ module stage1_fetch
       .buff_req_i   (buff_req),
       .buff_res_o   (buff_res),
       .buffer_miss_o(buffer_miss),
-      .lowX_res_i   (icache_res),
+      .lowX_res_i   (buff_lowX_res),
       .lowX_req_o   (icache_req)
   );
-
+/*
   icache icache (
       .clk_i        (clk_i),
       .rst_ni       (rst_ni),
@@ -152,6 +160,26 @@ module stage1_fetch
       .icache_miss_o(icache_miss),
       .lowX_res_i   (lx_ires_i),
       .lowX_req_o   (lx_ireq_o)
+  );
+*/
+  cache #(
+      .IS_ICACHE(1),
+      .cache_req_t(icache_req_t),
+      .cache_res_t(icache_res_t),
+      .lowX_req_t (ilowX_req_t),
+      .lowX_res_t (ilowX_res_t),
+      .CACHE_SIZE (IC_CAPACITY),
+      .BLK_SIZE   (BLK_SIZE),
+      .XLEN       (XLEN),
+      .NUM_WAY    (IC_WAY)
+  ) icache (
+      .clk_i      (clk_i),
+      .rst_ni     (rst_ni),
+      .flush_i    (flush_i),
+      .cache_req_i(icache_req),
+      .cache_res_o(icache_res),
+      .lowX_res_i (lx_ires_i),
+      .lowX_req_o (lx_ireq_o)
   );
 
   riscv_compressed_decoder compressed_decoder (
@@ -179,8 +207,12 @@ always @(posedge clk_i) begin
 if (!rst_ni) begin
     $fclose(log_file);
     log_file = $fopen("fetch_log.txt", "w");
-  end else if (fetch_valid) begin
-    $fwrite(log_file, "%h\n", pc_o); // Sadece PC yazılıyor
+  end else if (!stall_i && buff_res.valid) begin
+    if (is_comp_o) begin
+      $fwrite(log_file, "%0h:    %h\n", pc_o, buff_res.blk[15:0]); // Sadece PC yazılıyor
+    end else begin
+      $fwrite(log_file, "%0h:    %h\n", pc_o, buff_res.blk); // Sadece PC yazılıyor
+    end
   end
 end
 

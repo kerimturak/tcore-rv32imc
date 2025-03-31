@@ -82,6 +82,7 @@ module gray_align_buffer
   logic [   WOFFSET-1:0] parcel_idx;
   logic                  overflow;
   logic                  unalign;
+  logic                  lookup_ack;
 
   always_ff @(posedge clk_i) begin
     if (!rst_ni) begin
@@ -191,7 +192,17 @@ module gray_align_buffer
     buff_res_o.valid = buff_req_i.ready && (&hit_state || (((|miss_state && !buff_req_i.addr[1]) || (!(&miss_state) && buff_req_i.addr[1])) && lowX_res_i.valid));
     buff_res_o.ready = ((!even.miss && !odd.miss) || (lowX_res_i.valid && !(&miss_state)));
     buffer_miss_o = |miss_state;
-    lowX_req_o.valid = (|miss_state && !buff_req_i.uncached);
+    if (&miss_state) begin
+      if (lowX_res_i.valid) begin
+        lowX_req_o.valid = !lookup_ack && (unalign ? !buff_req_i.uncached : 0);
+      end else begin
+        lowX_req_o.valid = !lookup_ack && !buff_req_i.uncached;
+      end
+    end else if (|miss_state) begin
+      lowX_req_o.valid = !lookup_ack && !buff_req_i.uncached && !lowX_res_i.valid;
+    end else begin
+      lowX_req_o.valid = 0;
+    end
     lowX_req_o.ready = 1'b1;
     lowX_req_o.uncached = buff_req_i.uncached;
 
@@ -203,4 +214,12 @@ module gray_align_buffer
     endcase
   end
 
+  // Final lookup_ack logic common to both modes
+  always_ff @(posedge clk_i) begin
+    if (!rst_ni) begin
+      lookup_ack <= '0;
+    end else begin
+      lookup_ack <= lowX_res_i.valid ? !lowX_req_o.ready : (!lookup_ack ? lowX_req_o.valid && lowX_res_i.ready : lookup_ack);
+    end
+  end
 endmodule

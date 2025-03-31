@@ -26,23 +26,18 @@
 module cpu
   import tcore_param::*;
 (
-    input  logic                 clk_i,
-    input  logic                 rst_ni,
-    output logic                 iomem_valid,
-    input  logic                 iomem_ready,
-    output logic [         15:0] iomem_wstrb,
-    output logic [     XLEN-1:0] iomem_addr,
-    input  logic [BLK_SIZE -1:0] iomem_rdata,
-    output logic [BLK_SIZE -1:0] iomem_wdata,
-    output logic                 uart_tx_o,
-    input  logic                 uart_rx_i
+    input  logic                       clk_i,
+    input  logic                       rst_ni,
+    output iomem_req_t                 iomem_req_o,
+    input  iomem_res_t                 iomem_res_i,
+    output logic                       uart_tx_o,
+    input  logic                       uart_rx_i
 );
 
   logic                     stall_all;
   ilowX_req_t               lx_ireq;
   dlowX_res_t               lx_dres;
   dlowX_req_t               lx_dreq;
-  mem_req_t                 mem_req;
   // ------- fetch logic ------
   logic                     fe_stall;
   ilowX_res_t               lx_ires;
@@ -86,8 +81,8 @@ module cpu
   exc_type_e                alu_exc_type;
   logic                     ex_rd_csr;
   logic                     ex_wr_csr;
-  logic     [XLEN-1:0]      ex_mtvec;
-  logic     [XLEN-1:0]      ex_mepc;
+  logic          [XLEN-1:0] ex_mtvec;
+  logic          [XLEN-1:0] ex_mepc;
   // ------- memory logic ------
   pipe3_t                   pipe3;
   logic                     me_dmiss_stall;
@@ -98,73 +93,74 @@ module cpu
   logic          [XLEN-1:0] wb_pc;
   logic          [XLEN-1:0] wb_data;
   logic                     wb_trap_active;
-  logic [XLEN-1:0]          wb_trap_cause;
-  logic [XLEN-1:0]          wb_trap_mepc;
+  logic          [XLEN-1:0] wb_trap_cause;
+  logic          [XLEN-1:0] wb_trap_mepc;
   //----------------------------------              fetch             ---------------------------------------------
-  logic [4:0]               exc_array;
+  logic          [     4:0] exc_array;
   logic                     priority_flush;
 
   stage1_fetch fetch (
-      .clk_i          (clk_i),
-      .rst_ni         (rst_ni),
-      .stall_i        (stall_all),
-      .fe_stall_i     (fe_stall),
-      .flush_i        (fe_flush_cache),
-      .lx_ires_i      (lx_ires),
-      .pc_target_i    (ex_pc_target_last),
-      .spec_hit_i     (ex_spec_hit),
-      .wb_pc_i        (wb_pc),
-      .exc_array_i    (exc_array),
-      .mepc_i         (ex_mepc),
-      .spec_o         (fe_spec),
-      .lx_ireq_o      (lx_ireq),
-      .pc_o           (fe_pc),
-      .pc2_o          (fe_pc2),
-      .pc4_o          (fe_pc4),
-      .inst_o         (fe_inst),
-      .is_comp_o      (fe_is_comp),
-      .imiss_stall_o  (fe_imiss_stall),
-      .exc_type_o     (fe_exc_type),
-      .instr_type_o   (fe_instr_type)
+      .clk_i        (clk_i),
+      .rst_ni       (rst_ni),
+      .stall_i      (stall_all),
+      .fe_stall_i   (fe_stall),
+      .flush_i      (fe_flush_cache),
+      .lx_ires_i    (lx_ires),
+      .pc_target_i  (ex_pc_target_last),
+      .spec_hit_i   (ex_spec_hit),
+      .wb_pc_i      (wb_pc),
+      .exc_array_i  (exc_array),
+      .mepc_i       (ex_mepc),
+      .spec_o       (fe_spec),
+      .lx_ireq_o    (lx_ireq),
+      .pc_o         (fe_pc),
+      .pc2_o        (fe_pc2),
+      .pc4_o        (fe_pc4),
+      .inst_o       (fe_inst),
+      .is_comp_o    (fe_is_comp),
+      .imiss_stall_o(fe_imiss_stall),
+      .exc_type_o   (fe_exc_type),
+      .instr_type_o (fe_instr_type)
   );
 
   //----------------------------------              decode             ---------------------------------------------
   always_ff @(posedge clk_i) begin
     if (!rst_ni || de_flush_en) begin
-      pipe1   <= '{exc_type_e: NO_EXCEPTION, instr_type: instr_invalid, default: 0};
+      pipe1 <= '{exc_type_e: NO_EXCEPTION, instr_type: instr_invalid, default: 0};
     end else if (de_enable) begin
-      pipe1   <= '{pc      : fe_pc, pc4     : fe_pc4, pc2     : fe_pc2, inst    : fe_inst, is_comp : fe_is_comp, exc_type: ex_spec_hit ? fe_exc_type : NO_EXCEPTION, instr_type : fe_instr_type, spec: fe_spec};
+      pipe1 <= '{pc      : fe_pc, pc4     : fe_pc4, pc2     : fe_pc2, inst    : fe_inst, is_comp : fe_is_comp, exc_type: ex_spec_hit ? fe_exc_type : NO_EXCEPTION, instr_type : fe_instr_type,
+                 spec: fe_spec};
     end
   end
 
   always_comb begin
-    de_enable   = !(stall_all || de_stall);
+    de_enable = !(stall_all || de_stall);
     de_flush_en = priority_flush || stall_all ? 1'b0 : de_flush;
     fe_flush_cache = pipe2.instr_type == fence_i;
   end
 
   stage2_decode decode (
-      .clk_i        (clk_i),
-      .rst_ni       (rst_ni),
-      .fwd_a_i      (de_fwd_a),
-      .fwd_b_i      (de_fwd_b),
-      .wb_data_i    (wb_data),
-      .inst_i       (pipe1.inst),
-      .instr_type_i (pipe1.instr_type),
-      .exc_type_i   (pipe1.exc_type),
-      .rd_addr_i    (pipe4.rd_addr),
-      .rf_rw_en_i   (wb_rf_rw),
-      .r1_data_o    (de_r1_data),
-      .r2_data_o    (de_r2_data),
-      .ctrl_o       (de_ctrl),
-      .imm_o        (de_imm),
-      .exc_type_o   (de_exc_type)
+      .clk_i       (clk_i),
+      .rst_ni      (rst_ni),
+      .fwd_a_i     (de_fwd_a),
+      .fwd_b_i     (de_fwd_b),
+      .wb_data_i   (wb_data),
+      .inst_i      (pipe1.inst),
+      .instr_type_i(pipe1.instr_type),
+      .exc_type_i  (pipe1.exc_type),
+      .rd_addr_i   (pipe4.rd_addr),
+      .rf_rw_en_i  (wb_rf_rw),
+      .r1_data_o   (de_r1_data),
+      .r2_data_o   (de_r2_data),
+      .ctrl_o      (de_ctrl),
+      .imm_o       (de_imm),
+      .exc_type_o  (de_exc_type)
   );
 
   //----------------------------------              execute             ---------------------------------------------
   always_ff @(posedge clk_i) begin
     if (!rst_ni || ex_flush_en) begin
-      pipe2   <= '{exc_type_e: NO_EXCEPTION, instr_type: instr_invalid, default: 0, alu_ctrl: OP_ADD, pc_sel: NO_BJ, rw_size: NO_SIZE};
+      pipe2 <= '{exc_type_e: NO_EXCEPTION, instr_type: instr_invalid, default: 0, alu_ctrl: OP_ADD, pc_sel: NO_BJ, rw_size: 0};
     end else if (!stall_all) begin
       pipe2 <= '{
           pc          : pipe1.pc,
@@ -197,67 +193,67 @@ module cpu
     end
   end
 
-always_comb begin
+  always_comb begin
     ex_flush_en = priority_flush || stall_all ? 1'b0 : ex_flush;
     if (alu_exc_type != NO_EXCEPTION) begin
-        ex_exc_type = alu_exc_type;
-    end else if (pipe2.rw_size != NO_SIZE) begin
-        if (pipe2.wr_en) begin
-            unique case (pipe2.rw_size)
-                HALF_WORD: ex_exc_type = ex_alu_result[0] ? STORE_MISALIGNED : NO_EXCEPTION;
-                WORD:      ex_exc_type = (ex_alu_result[1] | ex_alu_result[0]) ? STORE_MISALIGNED : NO_EXCEPTION;
-                default:   ex_exc_type = NO_EXCEPTION;
-            endcase
-        end else begin
-            unique case (pipe2.rw_size)
-                HALF_WORD: ex_exc_type = ex_alu_result[0] ? LOAD_MISALIGNED : NO_EXCEPTION;
-                WORD:      ex_exc_type = (ex_alu_result[1] | ex_alu_result[0]) ? LOAD_MISALIGNED : NO_EXCEPTION;
-                default:   ex_exc_type = NO_EXCEPTION;
-            endcase
-        end
+      ex_exc_type = alu_exc_type;
+    end else if (pipe2.rw_size != 0) begin
+      if (pipe2.wr_en) begin
+        unique case (pipe2.rw_size)
+          2'b10: ex_exc_type = ex_alu_result[0] ? STORE_MISALIGNED : NO_EXCEPTION;
+          2'b11:      ex_exc_type = (ex_alu_result[1] | ex_alu_result[0]) ? STORE_MISALIGNED : NO_EXCEPTION;
+          default:   ex_exc_type = NO_EXCEPTION;
+        endcase
+      end else begin
+        unique case (pipe2.rw_size)
+          2'b10: ex_exc_type = ex_alu_result[0] ? LOAD_MISALIGNED : NO_EXCEPTION;
+          2'b11:      ex_exc_type = (ex_alu_result[1] | ex_alu_result[0]) ? LOAD_MISALIGNED : NO_EXCEPTION;
+          default:   ex_exc_type = NO_EXCEPTION;
+        endcase
+      end
     end else begin
-        ex_exc_type = NO_EXCEPTION;
+      ex_exc_type = NO_EXCEPTION;
     end
     ex_rd_csr = pipe2.rd_csr & !stall_all;
     ex_wr_csr = pipe2.wr_csr & !stall_all;
-end
+  end
 
 
   stage3_execution execution (
-      .clk_i         (clk_i),
-      .rst_ni        (rst_ni),
-      .fwd_a_i       (ex_fwd_a),
-      .fwd_b_i       (ex_fwd_b),
-      .alu_result_i  (pipe3.alu_result),
-      .wb_data_i     (wb_data),
-      .r1_data_i     (pipe2.r1_data),
-      .r2_data_i     (pipe2.r2_data),
-      .alu_in1_sel_i (pipe2.alu_in1_sel),
-      .alu_in2_sel_i (pipe2.alu_in2_sel),
-      .instr_type_i  (pipe2.instr_type),
-      .trap_active_i (wb_trap_active),
-      .trap_cause_i  (wb_trap_cause),
-      .trap_mepc_i   (wb_trap_mepc),
-      .rd_csr_i      (ex_rd_csr),
-      .wr_csr_i      (ex_wr_csr),
-      .csr_idx_i     (pipe2.csr_idx),
-      .is_comp_i     (pipe2.is_comp),
-      .csr_or_data_i (pipe2.csr_or_data),
-      .pc_i          (pipe2.pc),
-      .pc4_i         (pipe2.pc4),
-      .pc2_i         (pipe2.pc2),
-      .imm_i         (pipe2.imm),
-      .pc_sel_i      (pipe2.pc_sel),
-      .alu_ctrl_i    (pipe2.alu_ctrl),
-      .exc_type_i    (pipe2.exc_type),
-      .write_data_o  (ex_wdata),
-      .pc_target_o   (ex_pc_target),
-      .alu_result_o  (ex_alu_result),
-      .pc_sel_o      (ex_pc_sel),
-      .alu_stall_o   (ex_alu_stall),
-      .exc_type_o    (alu_exc_type),
-      .mtvec_o       (ex_mtvec),
-      .mepc_o        (ex_mepc)
+      .clk_i        (clk_i),
+      .rst_ni       (rst_ni),
+      .fwd_a_i      (ex_fwd_a),
+      .fwd_b_i      (ex_fwd_b),
+      .alu_result_i (pipe3.alu_result),
+      .wb_data_i    (wb_data),
+      .r1_data_i    (pipe2.r1_data),
+      .r2_data_i    (pipe2.r2_data),
+      .alu_in1_sel_i(pipe2.alu_in1_sel),
+      .alu_in2_sel_i(pipe2.alu_in2_sel),
+      .instr_type_i (pipe2.instr_type),
+      .trap_active_i(wb_trap_active),
+      .trap_cause_i (wb_trap_cause),
+      .trap_mepc_i  (wb_trap_mepc),
+      .rd_csr_i     (ex_rd_csr),
+      .wr_csr_i     (ex_wr_csr),
+      .csr_idx_i    (pipe2.csr_idx),
+      .is_comp_i    (pipe2.is_comp),
+      .csr_or_data_i(pipe2.csr_or_data),
+      .pc_i         (pipe2.pc),
+      .pc4_i        (pipe2.pc4),
+      .pc2_i        (pipe2.pc2),
+      .imm_i        (pipe2.imm),
+      .pc_sel_i     (pipe2.pc_sel),
+      .alu_ctrl_i   (pipe2.alu_ctrl),
+      .exc_type_i   (pipe2.exc_type),
+      .write_data_o (ex_wdata),
+      .pc_target_o  (ex_pc_target),
+      .alu_result_o (ex_alu_result),
+      .pc_sel_o     (ex_pc_sel),
+      .alu_stall_o  (ex_alu_stall),
+      .exc_type_o   (alu_exc_type),
+      .mtvec_o      (ex_mtvec),
+      .mepc_o       (ex_mepc)
   );
 
   always_comb begin
@@ -275,7 +271,7 @@ end
   //----------------------------------              memory             ---------------------------------------------
   always_ff @(posedge clk_i) begin
     if (!rst_ni) begin
-      pipe3 <= '{exc_type_e: NO_EXCEPTION, default: 0, rw_size: NO_SIZE};
+      pipe3 <= '{exc_type_e: NO_EXCEPTION, default: 0, rw_size: 0};
     end else if (!stall_all) begin
       pipe3 <= '{
           pc4         : pipe2.pc4,
@@ -297,20 +293,20 @@ end
   end
 
   stage4_memory memory (
-      .clk_i         (clk_i),
-      .rst_ni        (rst_ni),
-      .stall_i       (stall_all),
-      .wr_en_i       (pipe3.wr_en),
-      .rw_size_i     (pipe3.rw_size),
-      .alu_result_i  (pipe3.alu_result),
-      .write_data_i  (pipe3.write_data),
-      .lx_dres_i     (lx_dres),
-      .ld_op_sign_i  (pipe3.ld_op_sign),
-      .lx_dreq_o     (lx_dreq),
-      .me_data_o     (me_rdata),
-      .dmiss_stall_o (me_dmiss_stall),
-      .uart_rx_i     (uart_rx_i),
-      .uart_tx_o     (uart_tx_o)
+      .clk_i        (clk_i),
+      .rst_ni       (rst_ni),
+      .stall_i      (stall_all),
+      .wr_en_i      (pipe3.wr_en),
+      .rw_size_i    (pipe3.rw_size),
+      .alu_result_i (pipe3.alu_result),
+      .write_data_i (pipe3.write_data),
+      .lx_dres_i    (lx_dres),
+      .ld_op_sign_i (pipe3.ld_op_sign),
+      .lx_dreq_o    (lx_dreq),
+      .me_data_o    (me_rdata),
+      .dmiss_stall_o(me_dmiss_stall),
+      .uart_rx_i    (uart_rx_i),
+      .uart_tx_o    (uart_tx_o)
   );
 
   //----------------------------------              write-back             ---------------------------------------------
@@ -335,23 +331,23 @@ end
   end
 
   stage5_writeback writeback (
-      .data_sel_i    (pipe4.result_src),
-      .pc4_i         (pipe4.pc4),
-      .pc2_i         (pipe4.pc2),
-      .pc_i          (pipe4.pc),
-      .is_comp_i     (pipe4.is_comp),
-      .alu_result_i  (pipe4.alu_result),
-      .read_data_i   (pipe4.read_data),
-      .stall_i       (stall_all),
-      .mtvec_i       (pipe4.mtvec),
-      .rf_rw_en_i    (pipe4.rf_rw_en),
-      .rf_rw_en_o    (wb_rf_rw),
-      .wb_pc_o       (wb_pc),
-      .wb_data_o     (wb_data),
-      .exc_type_i    (pipe4.exc_type),
-      .trap_cause_o  (wb_trap_cause),
-      .trap_active_o (wb_trap_active),
-      .trap_mepc_o   (wb_trap_mepc)
+      .data_sel_i   (pipe4.result_src),
+      .pc4_i        (pipe4.pc4),
+      .pc2_i        (pipe4.pc2),
+      .pc_i         (pipe4.pc),
+      .is_comp_i    (pipe4.is_comp),
+      .alu_result_i (pipe4.alu_result),
+      .read_data_i  (pipe4.read_data),
+      .stall_i      (stall_all),
+      .mtvec_i      (pipe4.mtvec),
+      .rf_rw_en_i   (pipe4.rf_rw_en),
+      .rf_rw_en_o   (wb_rf_rw),
+      .wb_pc_o      (wb_pc),
+      .wb_data_o    (wb_data),
+      .exc_type_i   (pipe4.exc_type),
+      .trap_cause_o (wb_trap_cause),
+      .trap_active_o(wb_trap_active),
+      .trap_mepc_o  (wb_trap_mepc)
   );
 
   //----------------------------------              Multiple-Stage         ---------------------------------------------
@@ -378,28 +374,23 @@ end
   );
 
   memory_arbiter memory_arbiter (
-      .clk_i        (clk_i),
-      .rst_ni       (rst_ni),
-      .iomem_rdata_i(iomem_rdata),
-      .icache_req_i (lx_ireq),
-      .dcache_req_i (lx_dreq),
-      .mem_ready_i  (iomem_ready),
-      .icache_res_o (lx_ires),
-      .dcache_res_o (lx_dres),
-      .mem_req_o    (mem_req)
+      .clk_i       (clk_i),
+      .rst_ni      (rst_ni),
+      .icache_req_i(lx_ireq),
+      .dcache_req_i(lx_dreq),
+      .icache_res_o(lx_ires),
+      .dcache_res_o(lx_dres),
+      .iomem_res_i (iomem_res_i),
+      .iomem_req_o (iomem_req_o)
   );
 
   always_comb begin
-    iomem_valid = mem_req.valid;
-    iomem_addr  = mem_req.addr;
-    iomem_wstrb = mem_req.rw;
-    iomem_wdata = mem_req.data;
-    stall_all   = fe_imiss_stall || me_dmiss_stall || ex_alu_stall;
+    stall_all = fe_imiss_stall || me_dmiss_stall || ex_alu_stall;
     exc_array = '0;
-    exc_array = {pipe4.exc_type != NO_EXCEPTION, pipe3.exc_type!= NO_EXCEPTION, pipe2.exc_type!= NO_EXCEPTION, pipe1.exc_type!= NO_EXCEPTION, fe_exc_type!= NO_EXCEPTION};
+    exc_array = {pipe4.exc_type != NO_EXCEPTION, pipe3.exc_type != NO_EXCEPTION, pipe2.exc_type != NO_EXCEPTION, pipe1.exc_type != NO_EXCEPTION, fe_exc_type != NO_EXCEPTION};
 
     priority_flush = '0;
-    if (|exc_array[3:0]) begin // memory exception
+    if (|exc_array[3:0]) begin  // memory exception
       priority_flush = '1;
     end
   end

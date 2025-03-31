@@ -30,7 +30,7 @@ module stage4_memory
     input  logic                  rst_ni,
     input  logic                  stall_i,
     input  logic                  wr_en_i,
-    input  size_e                 rw_size_i,
+    input  logic       [     1:0] rw_size_i,
     input  logic       [XLEN-1:0] alu_result_i,
     input  logic       [XLEN-1:0] write_data_i,
     input  dlowX_res_t            lx_dres_i,
@@ -44,7 +44,6 @@ module stage4_memory
 
   dcache_req_t            dcache_req;
   dcache_res_t            dcache_res;
-  logic                   dcache_miss;
   logic        [XLEN-1:0] pherip_addr;
   logic        [XLEN-1:0] pherip_wdata;
   logic        [     3:0] pherip_sel;
@@ -55,7 +54,7 @@ module stage4_memory
   logic                   memregion;
 
   always_comb begin
-    dcache_req.valid = !dcache_res.valid && (rw_size_i != NO_SIZE) && memregion;
+    dcache_req.valid = !dcache_res.valid && (rw_size_i != 0) && memregion;
     dcache_req.addr = alu_result_i;
     dcache_req.ready = 1'b1;
     dcache_req.rw = wr_en_i;
@@ -70,7 +69,7 @@ module stage4_memory
       .uncached_o (uncached),
       .memregion_o(memregion)      // unused now
   );
-
+  /*
   dcache dcache (
       .clk_i        (clk_i),
       .rst_ni       (rst_ni),
@@ -80,6 +79,68 @@ module stage4_memory
       .lowX_res_i   (lx_dres_i),
       .lowX_req_o   (lx_dreq_o)
   );
+*/
+
+  cache #(
+      .IS_ICACHE  (0),
+      .cache_req_t(dcache_req_t),
+      .cache_res_t(dcache_res_t),
+      .lowX_req_t (dlowX_req_t),
+      .lowX_res_t (dlowX_res_t),
+      .CACHE_SIZE (DC_CAPACITY),
+      .BLK_SIZE   (BLK_SIZE),
+      .XLEN       (XLEN),
+      .NUM_WAY    (DC_WAY)
+  ) dcache (
+      .clk_i      (clk_i),
+      .rst_ni     (rst_ni),
+      .flush_i    (0),
+      .cache_req_i(dcache_req),
+      .cache_res_o(dcache_res),
+      .lowX_res_i (lx_dres_i),
+      .lowX_req_o (lx_dreq_o)
+  );
+
+
+  ////////////////
+  integer log_file;
+
+  // Log dosyasını aç
+  initial begin
+    log_file = $fopen("memory_log.txt", "w");
+    if (log_file == 0) begin
+      $display("ERROR: Log file could not be opened!");
+      $finish;
+    end
+  end
+
+  // Fetch edilen instruction’ları kaydet
+  always @(posedge clk_i) begin
+    if (!rst_ni) begin
+      $fclose(log_file);
+      log_file = $fopen("memory_log.txt", "w");
+    end else if (!stall_i && dcache_req.valid) begin
+      if (dcache_req.rw) begin
+        if (dcache_res.valid) begin
+          $fwrite(log_file, "%0h:    %h\n", dcache_req.addr, dcache_req.data);
+        end
+      end else begin
+        if (dcache_res.valid) begin
+          $fwrite(log_file, "%0h:    %h\n", dcache_req.addr, me_data_o);
+        end
+      end
+    end
+  end
+
+  // Simülasyon bittiğinde dosyayı kapat
+  final begin
+    $fclose(log_file);
+  end
+  ///////////////
+
+
+
+
 
   logic [ 7:0] selected_byte;
   logic [15:0] selected_halfword;
@@ -91,10 +152,10 @@ module stage4_memory
     selected_halfword = rd_data[(dcache_req.addr[1]*16)+:16];
     // Determine the output based on load operation sizef
     unique case (rw_size_i)
-      BYTE:      me_data_o = ld_op_sign_i ? {{24{selected_byte[7]}}, selected_byte} : {24'b0, selected_byte};
-      HALF_WORD: me_data_o = ld_op_sign_i ? {{16{selected_halfword[15]}}, selected_halfword} : {16'b0, selected_halfword};
-      WORD:      me_data_o = rd_data;
-      default:   me_data_o = '0;
+      2'b01:   me_data_o = ld_op_sign_i ? {{24{selected_byte[7]}}, selected_byte} : {24'b0, selected_byte};
+      2'b10:   me_data_o = ld_op_sign_i ? {{16{selected_halfword[15]}}, selected_halfword} : {16'b0, selected_halfword};
+      2'b11:   me_data_o = rd_data;
+      default: me_data_o = '0;
     endcase
   end
 

@@ -96,7 +96,7 @@ module control_unit
         ctrl_o.alu_in2_sel = 1'b0;
         ctrl_o.wr_en       = 1'b0;
         ctrl_o.result_src  = 2'b00;
-        ctrl_o.rw_size     = NO_SIZE;
+        ctrl_o.rw_size     = '0;
       end
       op_i_type: begin
         ctrl_o.rf_rw_en    = 1'b1;
@@ -112,7 +112,7 @@ module control_unit
         ctrl_o.alu_in2_sel = 1'b1;
         ctrl_o.wr_en       = 1'b0;
         ctrl_o.result_src  = 2'b00;
-        ctrl_o.rw_size     = NO_SIZE;
+        ctrl_o.rw_size     = '0;
       end
       op_i_type_load: begin
         ctrl_o.rf_rw_en    = 1'b1;
@@ -125,10 +125,10 @@ module control_unit
         ctrl_o.wr_en       = 1'b0;
         ctrl_o.result_src  = 2'b01;
         case (instr_type_i)
-          i_lb, i_lbu: ctrl_o.rw_size = BYTE;
-          i_lh, i_lhu: ctrl_o.rw_size = HALF_WORD;
-          i_lw:        ctrl_o.rw_size = WORD;
-          default:     ctrl_o.rw_size = NO_SIZE;
+          i_lb, i_lbu: ctrl_o.rw_size = 2'b01;
+          i_lh, i_lhu: ctrl_o.rw_size = 2'b10;
+          i_lw:        ctrl_o.rw_size = 2'b11;
+          default:     ctrl_o.rw_size = '0;
         endcase
       end
       op_s_type: begin
@@ -141,10 +141,10 @@ module control_unit
         ctrl_o.alu_in2_sel = 1'b1;
         ctrl_o.wr_en       = 1'b1;
         case (instr_type_i)  // uniqeu case
-          s_sb:    ctrl_o.rw_size = BYTE;
-          s_sh:    ctrl_o.rw_size = HALF_WORD;
-          s_sw:    ctrl_o.rw_size = WORD;
-          default: ctrl_o.rw_size = NO_SIZE;
+          s_sb:    ctrl_o.rw_size = 2'b01;
+          s_sh:    ctrl_o.rw_size = 2'b10;
+          s_sw:    ctrl_o.rw_size = 2'b11;
+          default: ctrl_o.rw_size = '0;
         endcase
         ctrl_o.result_src = 2'b00;
       end
@@ -158,7 +158,7 @@ module control_unit
         ctrl_o.alu_in2_sel = 1'b0;
         ctrl_o.wr_en       = 1'b0;
         ctrl_o.result_src  = 2'b00;
-        ctrl_o.rw_size     = NO_SIZE;
+        ctrl_o.rw_size     = '0;
       end
       op_i_type_jump      : //i_jalr
         begin
@@ -171,7 +171,7 @@ module control_unit
         ctrl_o.alu_in2_sel = 1'b1;
         ctrl_o.wr_en       = 1'b0;
         ctrl_o.result_src  = 2'b10;
-        ctrl_o.rw_size     = NO_SIZE;
+        ctrl_o.rw_size     = '0;
       end
       op_u_type_jump      : //u_jalr
         begin
@@ -184,7 +184,7 @@ module control_unit
         ctrl_o.alu_in2_sel = 1'b0;
         ctrl_o.wr_en       = 1'b0;
         ctrl_o.result_src  = 2'b10;
-        ctrl_o.rw_size     = NO_SIZE;
+        ctrl_o.rw_size     = '0;
       end
       op_u_type_auipc: begin
         ctrl_o.rf_rw_en    = 1'b1;
@@ -196,7 +196,7 @@ module control_unit
         ctrl_o.alu_in2_sel = 1'b1;
         ctrl_o.wr_en       = 1'b0;
         ctrl_o.result_src  = 2'b00;
-        ctrl_o.rw_size     = NO_SIZE;
+        ctrl_o.rw_size     = '0;
       end
       op_u_type_load: begin
         ctrl_o.rf_rw_en    = 1'b1;
@@ -208,7 +208,7 @@ module control_unit
         ctrl_o.alu_in2_sel = 1'b1;
         ctrl_o.wr_en       = 1'b0;
         ctrl_o.result_src  = 2'b00;
-        ctrl_o.rw_size     = NO_SIZE;
+        ctrl_o.rw_size     = '0;
       end
       system: begin
         case (instr_type_i)
@@ -222,7 +222,7 @@ module control_unit
             ctrl_o.alu_in2_sel = 1'b0;
             ctrl_o.wr_en       = 1'b0;
             ctrl_o.result_src  = 2'b00;
-            ctrl_o.rw_size     = NO_SIZE;
+            ctrl_o.rw_size     = '0;
           end
           CSR_RWI, CSR_RSI, CSR_RCI: begin
             ctrl_o.rf_rw_en    = 1'b1;
@@ -234,7 +234,7 @@ module control_unit
             ctrl_o.alu_in2_sel = 1'b1;
             ctrl_o.wr_en       = 1'b0;
             ctrl_o.result_src  = 2'b00;
-            ctrl_o.rw_size     = NO_SIZE;
+            ctrl_o.rw_size     = '0;
           end
         endcase
       end
@@ -248,7 +248,7 @@ module control_unit
         ctrl_o.alu_in2_sel = 1'b0;
         ctrl_o.wr_en       = 1'b0;
         ctrl_o.result_src  = 2'b00;
-        ctrl_o.rw_size     = NO_SIZE;
+        ctrl_o.rw_size     = '0;
       end
     endcase
   end

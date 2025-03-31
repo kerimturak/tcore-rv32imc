@@ -39,7 +39,7 @@ SV_SOURCES =  $(TCORE_DIR)/rtl/pkg/tcore_param.sv \
               $(wildcard $(TCORE_DIR)/rtl/wrapper/*.v)
 
 # 🔹 Test Bench ve Wrapper (ModelSim için)
-TB_FILE = $(TCORE_DIR)/rtl/tb/tb_wrapper.v
+TB_FILE = $(TCORE_DIR)/rtl/tb/tb_wrapper.sv
 TOP_LEVEL = tb_wrapper
 LIBRARY = work
 VSIM = vsim
@@ -55,8 +55,7 @@ CHECK_SCRIPT = $(TCORE_DIR)/sw/check_pass_fail.py
 DUMP_PARSER = $(TCORE_DIR)/sw/dump_parser.py
 
 # 🔹 RAM İçin Sabit Test Yükleme Dosyası
-MEM_FILE = $(TCORE_DIR)/test.mem
-
+MEM_FILE = $(TCORE_DIR)/coremark_baremetal_static.mem
 # 🔹 Simülasyon Süresi (ModelSim için)
 SIM_TIME = 20000ns
 
@@ -93,13 +92,6 @@ simulate: compile
 
 # ModelSim/QuestaSim ile GUI modunda simülasyon (Eski yöntem)
 simulate_gui: compile
-	@if [ -z "$(TEST_FILE)" ]; then \
-		echo "❌ Error: TEST_FILE is not set! Use 'make simulate_gui TEST_FILE=/path/to/test.hex'"; \
-		exit 1; \
-	fi
-	@echo "🔍 Simulating test in GUI mode: $(TEST_FILE)"
-	@rm -f $(MEM_FILE)  # Önceki RAM dosyasını temizle
-	@cp "$(TEST_FILE)" "$(MEM_FILE)"  # RAM'e yeni test yükle
 	$(VSIM) $(LIBRARY).$(TOP_LEVEL) -do "questa.do" -t ns -voptargs=+acc=npr
 
 # ----------------------------------------------------------------------

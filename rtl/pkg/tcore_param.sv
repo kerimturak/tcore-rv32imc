@@ -55,7 +55,8 @@ package tcore_param;
   localparam Mul_Type = 0;  // 1: dadda 0: wallace
 
 
-  typedef enum logic [5:0] { 
+
+  typedef enum logic [5:0] {
     Null_Instr_Type,
     instr_invalid,
     r_add,
@@ -85,9 +86,9 @@ package tcore_param;
     r_remu,
     r_div,
     r_divu,
-    i_lb ,
-    i_lh ,
-    i_lw ,
+    i_lb,
+    i_lh,
+    i_lw,
     i_lbu,
     i_lhu,
     s_sb,
@@ -128,110 +129,110 @@ package tcore_param;
     input inst_t inst_i;
 
     case (inst_i.opcode)
-          op_fence_i : resolved_instr_type = inst_i.funct3 == '0 ? fence_i : instr_invalid;
-          op_r_type: begin
-            if (inst_i.funct7[0]) begin
-              case (inst_i.funct3)
-                3'd0: resolved_instr_type = r_mul   ;
-                3'd1: resolved_instr_type = r_mulh  ;
-                3'd2: resolved_instr_type = r_mulhsu;
-                3'd3: resolved_instr_type = r_mulhu ;
-                3'd4: resolved_instr_type = r_div   ;
-                3'd5: resolved_instr_type = r_divu  ;
-                3'd6: resolved_instr_type = r_rem   ;
-                3'd7: resolved_instr_type = r_remu  ;
-                default: resolved_instr_type = instr_invalid;
-              endcase
-            end else begin
-              case (inst_i.funct3)
-                3'd0: resolved_instr_type = (inst_i.funct7[5] == 1'b0) ? r_add  : r_sub;
-                3'd1: resolved_instr_type = r_sll;
-                3'd2: resolved_instr_type = r_slt;
-                3'd3: resolved_instr_type = r_sltu;
-                3'd4: resolved_instr_type = r_xor;
-                3'd5: resolved_instr_type = (inst_i.funct7[5] == 1'b0) ? r_srl : r_sra;
-                3'd6: resolved_instr_type = r_or;
-                3'd7: resolved_instr_type = r_and;
-                default: resolved_instr_type = instr_invalid;
-              endcase
-            end
-              
+      op_fence_i: resolved_instr_type = inst_i.funct3 == '0 ? fence_i : instr_invalid;
+      op_r_type: begin
+        if (inst_i.funct7[0]) begin
+          case (inst_i.funct3)
+            3'd0:    resolved_instr_type = r_mul;
+            3'd1:    resolved_instr_type = r_mulh;
+            3'd2:    resolved_instr_type = r_mulhsu;
+            3'd3:    resolved_instr_type = r_mulhu;
+            3'd4:    resolved_instr_type = r_div;
+            3'd5:    resolved_instr_type = r_divu;
+            3'd6:    resolved_instr_type = r_rem;
+            3'd7:    resolved_instr_type = r_remu;
+            default: resolved_instr_type = instr_invalid;
+          endcase
+        end else begin
+          case (inst_i.funct3)
+            3'd0:    resolved_instr_type = (inst_i.funct7[5] == 1'b0) ? r_add : r_sub;
+            3'd1:    resolved_instr_type = r_sll;
+            3'd2:    resolved_instr_type = r_slt;
+            3'd3:    resolved_instr_type = r_sltu;
+            3'd4:    resolved_instr_type = r_xor;
+            3'd5:    resolved_instr_type = (inst_i.funct7[5] == 1'b0) ? r_srl : r_sra;
+            3'd6:    resolved_instr_type = r_or;
+            3'd7:    resolved_instr_type = r_and;
+            default: resolved_instr_type = instr_invalid;
+          endcase
+        end
+
+      end
+
+      op_i_type_load: begin
+        case (inst_i.funct3)
+          3'd0:    resolved_instr_type = i_lb;
+          3'd1:    resolved_instr_type = i_lh;
+          3'd2:    resolved_instr_type = i_lw;
+          3'd4:    resolved_instr_type = i_lbu;
+          3'd5:    resolved_instr_type = i_lhu;
+          default: resolved_instr_type = instr_invalid;
+        endcase
+      end
+
+      op_i_type: begin
+        case (inst_i.funct3)
+          3'd0:    resolved_instr_type = i_addi;
+          3'd2:    resolved_instr_type = i_slti;
+          3'd3:    resolved_instr_type = i_sltiu;
+          3'd4:    resolved_instr_type = i_xori;
+          3'd6:    resolved_instr_type = i_ori;
+          3'd7:    resolved_instr_type = i_andi;
+          3'd1:    resolved_instr_type = i_slli;
+          3'd5:    resolved_instr_type = (inst_i.funct7[5] == 1'b0) ? i_srli : i_srai;
+          default: resolved_instr_type = instr_invalid;
+        endcase
+      end
+
+      op_s_type: begin
+        case (inst_i.funct3)
+          3'd0:    resolved_instr_type = s_sb;
+          3'd1:    resolved_instr_type = s_sh;
+          3'd2:    resolved_instr_type = s_sw;
+          default: resolved_instr_type = instr_invalid;
+        endcase
+      end
+
+      op_b_type: begin
+        case (inst_i.funct3)
+          3'd0:    resolved_instr_type = b_beq;
+          3'd1:    resolved_instr_type = b_bne;
+          3'd4:    resolved_instr_type = b_blt;
+          3'd5:    resolved_instr_type = b_bge;
+          3'd6:    resolved_instr_type = b_bltu;
+          3'd7:    resolved_instr_type = b_bgeu;
+          default: resolved_instr_type = instr_invalid;
+        endcase
+      end
+
+      op_u_type_load:  resolved_instr_type = u_lui;
+      op_u_type_auipc: resolved_instr_type = u_auipc;
+      op_u_type_jump:  resolved_instr_type = u_jal;
+      op_i_type_jump:  resolved_instr_type = i_jalr;
+
+      system: begin
+        case (inst_i.funct3)
+          3'd1: resolved_instr_type = CSR_RW;
+          3'd2: resolved_instr_type = CSR_RS;
+          3'd3: resolved_instr_type = CSR_RC;
+          3'd5: resolved_instr_type = CSR_RWI;
+          3'd6: resolved_instr_type = CSR_RSI;
+          3'd7: resolved_instr_type = CSR_RCI;
+          default: begin
+            if (inst_i[21:20] == 2'd0) resolved_instr_type = ecall;
+            else if (inst_i[21:20] == 2'd1) resolved_instr_type = ebreak;
+            else if (inst_i[21:20] == 2'd2) resolved_instr_type = mret;
+            else resolved_instr_type = instr_invalid;
           end
+        endcase
+      end
 
-          op_i_type_load: begin
-              case (inst_i.funct3)
-                  3'd0: resolved_instr_type = i_lb ;
-                  3'd1: resolved_instr_type = i_lh ;
-                  3'd2: resolved_instr_type = i_lw ;
-                  3'd4: resolved_instr_type = i_lbu;
-                  3'd5: resolved_instr_type = i_lhu;
-                  default: resolved_instr_type = instr_invalid;
-              endcase
-          end
-
-          op_i_type: begin
-              case (inst_i.funct3)
-                  3'd0: resolved_instr_type = i_addi;
-                  3'd2: resolved_instr_type = i_slti;
-                  3'd3: resolved_instr_type = i_sltiu;
-                  3'd4: resolved_instr_type = i_xori;
-                  3'd6: resolved_instr_type = i_ori;
-                  3'd7: resolved_instr_type = i_andi;
-                  3'd1: resolved_instr_type = i_slli;
-                  3'd5: resolved_instr_type = (inst_i.funct7[5] == 1'b0) ? i_srli : i_srai;
-                  default: resolved_instr_type = instr_invalid;
-              endcase
-          end
-
-          op_s_type: begin
-              case (inst_i.funct3)
-                  3'd0: resolved_instr_type = s_sb;
-                  3'd1: resolved_instr_type = s_sh;
-                  3'd2: resolved_instr_type = s_sw;
-                  default: resolved_instr_type = instr_invalid;
-              endcase
-          end
-
-          op_b_type: begin
-              case (inst_i.funct3)
-                  3'd0: resolved_instr_type = b_beq;
-                  3'd1: resolved_instr_type = b_bne;
-                  3'd4: resolved_instr_type = b_blt;
-                  3'd5: resolved_instr_type = b_bge;
-                  3'd6: resolved_instr_type = b_bltu;
-                  3'd7: resolved_instr_type = b_bgeu;
-                  default: resolved_instr_type = instr_invalid;
-              endcase
-          end
-
-          op_u_type_load: resolved_instr_type = u_lui;
-          op_u_type_auipc: resolved_instr_type = u_auipc;
-          op_u_type_jump: resolved_instr_type = u_jal;
-          op_i_type_jump: resolved_instr_type = i_jalr;
-
-          system: begin
-              case (inst_i.funct3)
-                  3'd1: resolved_instr_type = CSR_RW;
-                  3'd2: resolved_instr_type = CSR_RS;
-                  3'd3: resolved_instr_type = CSR_RC;
-                  3'd5: resolved_instr_type = CSR_RWI;
-                  3'd6: resolved_instr_type = CSR_RSI;
-                  3'd7: resolved_instr_type = CSR_RCI;
-                  default: begin
-                      if (inst_i[21:20] == 2'd0) resolved_instr_type = ecall;
-                      else if (inst_i[21:20] == 2'd1) resolved_instr_type = ebreak;
-                      else if (inst_i[21:20] == 2'd2) resolved_instr_type = mret;
-                      else resolved_instr_type = instr_invalid;
-                  end
-              endcase
-          end
-
-          default: resolved_instr_type = instr_invalid; // Geçersiz talimat
-      endcase
-      return resolved_instr_type;
+      default: resolved_instr_type = instr_invalid;  // Geçersiz talimat
+    endcase
+    return resolved_instr_type;
   endfunction
 
-  typedef enum logic [3:0] { 
+  typedef enum logic [3:0] {
     INSTR_MISALIGNED,
     INSTR_ACCESS_FAULT,
     ILLEGAL_INSTRUCTION,
@@ -264,13 +265,6 @@ package tcore_param;
     JALR,
     JAL
   } pc_sel_e;
-
-  typedef enum logic [1:0] {
-    NO_SIZE,
-    BYTE,
-    HALF_WORD,
-    WORD
-  } size_e;
 
   typedef enum logic [3:0] {
     NO_IMM,
@@ -334,7 +328,7 @@ package tcore_param;
     logic            is_comp;
     logic            rf_rw_en;
     logic            wr_en;
-    size_e           rw_size;
+    logic [1:0]      rw_size;
     logic [1:0]      result_src;
     alu_op_e         alu_ctrl;
     pc_sel_e         pc_sel;
@@ -363,14 +357,14 @@ package tcore_param;
     logic            is_comp;
     logic            rf_rw_en;
     logic            wr_en;
-    size_e           rw_size;
+    logic [1:0]      rw_size;
     logic [1:0]      result_src;
     logic            ld_op_sign;
     logic [4:0]      rd_addr;
     logic [XLEN-1:0] alu_result;
     logic [XLEN-1:0] write_data;
     exc_type_e       exc_type;
-    logic     [XLEN-1:0] mtvec;
+    logic [XLEN-1:0] mtvec;
   } pipe3_t;
 
   typedef struct packed {
@@ -384,14 +378,14 @@ package tcore_param;
     logic [XLEN-1:0] alu_result;
     logic [XLEN-1:0] read_data;
     exc_type_e       exc_type;
-    logic     [XLEN-1:0] mtvec;
+    logic [XLEN-1:0] mtvec;
   } pipe4_t;
 
   typedef struct packed {
     logic        rf_rw_en;
     imm_e        imm_sel;
     logic        wr_en;
-    size_e       rw_size;
+    logic [1:0]  rw_size;
     logic [1:0]  result_src;
     alu_op_e     alu_ctrl;
     pc_sel_e     pc_sel;
@@ -415,6 +409,7 @@ package tcore_param;
   typedef struct packed {
     logic                valid;
     logic                ready;
+    logic                miss;
     logic [BLK_SIZE-1:0] blk;
   } icache_res_t;
 
@@ -443,12 +438,13 @@ package tcore_param;
     logic [XLEN-1:0] addr;
     logic            uncached;
     logic            rw;
-    size_e           rw_size;
+    logic [1:0]      rw_size;
     logic [31:0]     data;
   } dcache_req_t;
 
   typedef struct packed {
     logic        valid;
+    logic        miss;
     logic        ready;
     logic [31:0] data;
   } dcache_res_t;
@@ -463,17 +459,52 @@ package tcore_param;
     logic                valid;
     logic                ready;
     logic [XLEN-1:0]     addr;
-    size_e               rw_size;
+    logic [1:0]          rw_size;
     logic                rw;
     logic [BLK_SIZE-1:0] data;
     logic                uncached;
   } dlowX_req_t;
 
   typedef struct packed {
+    logic            valid;
+    logic            ready;
+    logic [XLEN-1:0] addr;
+    logic            uncached;
+  } cache_req_t;
+
+  typedef struct packed {
     logic                valid;
-    logic [XLEN-1:0]     addr;
-    logic [BLK_SIZE-1:0] data;
-    logic [15:0]         rw;
-  } mem_req_t;
+    logic                ready;
+    logic [BLK_SIZE-1:0] blk;
+  } cache_res_t;
+
+  typedef struct packed {
+    logic                valid;
+    logic                ready;
+    logic [BLK_SIZE-1:0] blk;
+  } lowX_res_t;
+
+  typedef struct packed {
+    logic            valid;
+    logic            ready;
+    logic [XLEN-1:0] addr;
+    logic            uncached;
+  } lowX_req_t;
+
+
+  typedef struct packed {
+    logic                 valid;
+    logic                 ready;
+    logic [15:0]          rw;
+    logic [XLEN-1:0]      addr;
+    logic [BLK_SIZE -1:0] data;
+  } iomem_req_t;
+
+
+  typedef struct packed {
+    logic                 valid;
+    logic                 ready;
+    logic [BLK_SIZE -1:0] data;
+  } iomem_res_t;
 
 endpackage

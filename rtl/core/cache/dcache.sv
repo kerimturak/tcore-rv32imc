@@ -35,7 +35,6 @@ module dcache
     input  logic        rst_ni,
     input  dcache_req_t cache_req_i,
     output dcache_res_t cache_res_o,
-    output logic        dcache_miss_o,
     input  dlowX_res_t  lowX_res_i,
     output dlowX_req_t  lowX_req_o
 );
@@ -48,7 +47,7 @@ module dcache
 
   logic                  uncached_q;
   logic                  rw_q;
-  size_e                 rw_size_q;
+  logic[1:0]                 rw_size_q;
   logic                  cache_miss;
   logic                  cache_hit;
   logic  [IDX_WIDTH-1:0] pc_idx;
@@ -92,7 +91,7 @@ module dcache
       wdata_q     <= '0;
       uncached_q  <= '0;
       rw_q        <= '0;
-      rw_size_q   <= NO_SIZE;
+      rw_size_q   <= 0;
       cpu_valid_q <= '0;
       flush_index <= '0;
       flush       <= '1;
@@ -178,10 +177,10 @@ module dcache
   always_comb begin
     data_wr_pre = mask_data;
     case (rw_size_q)
-      WORD:      data_wr_pre[cache_req_i.addr[BOFFSET-1:2]*32+:32] = wdata_q;
-      HALF_WORD: data_wr_pre[cache_req_i.addr[BOFFSET-1:1]*16+:16] = wdata_q;
-      BYTE:      data_wr_pre[cache_req_i.addr[BOFFSET-1:0]*8+:8] = wdata_q;
-      NO_SIZE:   data_wr_pre = '0;
+      2'b00:data_wr_pre[cache_req_i.addr[BOFFSET-1:2]*32+:32] = wdata_q;
+      2'b01:data_wr_pre[cache_req_i.addr[BOFFSET-1:1]*16+:16] = wdata_q;
+      2'b10:data_wr_pre[cache_req_i.addr[BOFFSET-1:0]*8+:8] = wdata_q;
+      2'b11:data_wr_pre = '0;
     endcase
   end
 
@@ -234,13 +233,13 @@ module dcache
     lowX_req_o.uncached = write_back ? '0 : uncached_q;
     lowX_req_o.addr = write_back ? {evict_tag, pc_idx, {BOFFSET{1'b0}}} : {addr_q[31:BOFFSET], {BOFFSET{1'b0}}};
     lowX_req_o.rw = write_back ? '1 : '0;
-    lowX_req_o.rw_size = write_back ? WORD : rw_size_q;
+    lowX_req_o.rw_size = write_back ? 2'b11 : rw_size_q;
     lowX_req_o.data = write_back ? evict_data : '0;
 
     cache_res_o.valid = !rw_q ? !write_back && cpu_valid_q &&  (cache_hit || (cache_miss && lowX_req_o.ready && lowX_res_i.valid)) :
                         !write_back && cpu_valid_q && cache_req_i.ready  && (cache_hit || (cache_miss && lowX_req_o.ready && lowX_res_i.valid));
     cache_res_o.ready = !rw_q ? !write_back && (!cache_miss || lowX_res_i.valid) && !flush && !tag_array_wr_en : !write_back && !tag_array_wr_en && lowX_req_o.ready && lowX_res_i.valid && !flush;
-    dcache_miss_o = cache_miss;
+    dcache_res.miss = cache_miss;
     cache_res_o.data = (cache_miss && lowX_res_i.valid) ? lowX_res_i.data[word_idx*32+:32] : cache_select_data[word_idx*32+:32];
   end
 
