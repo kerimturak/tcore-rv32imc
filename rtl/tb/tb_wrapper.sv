@@ -3,13 +3,15 @@ import tcore_param::*;
 module tb_wrapper;
   logic               clk_i = 0;
   logic               rst_ni = 0;
-  logic       [127:0] ram        [1200-1:0];
+  logic       [127:0] ram        [2048-1:0];
   logic               uart_tx_o;
   logic               uart_rx_i;
   iomem_req_t         iomem_req;
   iomem_res_t         iomem_res;
+  logic [$clog2(2048)-1:0] idx;
 
-  initial $readmemh("coremark_baremetal_static.mem", ram, 0, 1200);
+  assign idx = iomem_req.addr[$clog2(2048)+4-1:4];
+  initial $readmemh("coremark_baremetal_static.mem", ram, 0, 2048);
 
   cpu soc (
       .clk_i      (clk_i),
@@ -33,16 +35,16 @@ module tb_wrapper;
           // Write işlemi: 16 byte'lık kelime için rw_en sinyali aktif olan byte'ları güncelle.
           integer i;
           // Öncelikle mevcut kelimeyi oku ve sonra güncelle
-          count <= count + 1;
-          iomem_res.valid <= (count == 7);
-          for (i = 0; i < 16; i = i + 1) begin
+          count <= (count == 15) ? 0 : count + 1;
+          iomem_res.valid <= (count == 15);
+          for (i = 0; i < 15; i = i + 1) begin
             if (iomem_req.rw[i])
-              ram[iomem_req.addr[13:3]][8*i +: 8] <= iomem_req.data[8*i +: 8];
+              ram[idx][8*i +: 8] <= iomem_req.data[8*i +: 8];
           end
         end else begin
-          count <= count + 1;
-          iomem_res.valid <= (count == 7);
-          iomem_res.data  <= ram[iomem_req.addr[14:4]];
+          count <= (count == 15) ? 0 : count + 1;
+          iomem_res.valid <= (count == 15);
+          iomem_res.data  <= ram[idx];
         end
       end else begin
         iomem_res.valid <= '0;
