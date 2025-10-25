@@ -1,31 +1,24 @@
-# 🔹 İşlemci ve Test Dizini (Tam Yollar)
-HOME_DIR         = /home/kerim
-TCORE_DIR        = $(HOME_DIR)/tcore-rv32imc
+# ============================================================
+# 🔹 TCORE RISC-V Processor — Unified Makefile (ModelSim + Verilator)
+# ============================================================
 
-# ISA testlerinin bulunduğu dizin
+TCORE_DIR        = .
 ISA_TESTS_DIR    = $(TCORE_DIR)/tests/riscv-tests/isa
-
-# Imperas ve riscv-arch-test tabanlı HEX dosyalarının bulunduğu dizinler
 IMPERAS_HEX_DIR  = $(TCORE_DIR)/tests/imperas-riscv-tests/work/rv32i_m/I/hex \
-									 $(TCORE_DIR)/tests/imperas-riscv-tests/work/rv32i_m/M/hex \
-									 $(TCORE_DIR)/tests/imperas-riscv-tests/work/rv32i_m/C/hex
+                   $(TCORE_DIR)/tests/imperas-riscv-tests/work/rv32i_m/M/hex \
+                   $(TCORE_DIR)/tests/imperas-riscv-tests/work/rv32i_m/C/hex
 ARCH_HEX_DIR     = $(TCORE_DIR)/tests/riscv-arch-test/work/rv32i_m/I/hex \
-									 $(TCORE_DIR)/tests/riscv-arch-test/work/rv32i_m/M/hex \
-									 $(TCORE_DIR)/tests/riscv-arch-test/work/rv32i_m/C/hex
+                   $(TCORE_DIR)/tests/riscv-arch-test/work/rv32i_m/M/hex \
+                   $(TCORE_DIR)/tests/riscv-arch-test/work/rv32i_m/C/hex
 
-# Tüm HEX dosyalarını bir araya getiren değişken:
 HEX_FILES = $(wildcard $(IMPERAS_HEX_DIR)/*.hex) \
             $(wildcard $(ARCH_HEX_DIR)/*.hex) \
             $(wildcard $(ISA_TESTS_DIR)/*.hex)
 
-
-# 🔹 ModelSim/QuestaSim Ayarları (Hızlandırma İçin Optimize Edildi)
 INC_FILE = $(TCORE_DIR)/rtl/include/
 SUPPRESS_CMD = -suppress vlog-2583 -suppress vopt-8386 -suppress vlog-2275 -svinputport=relaxed
 VLOG_OPTS = -sv ${SUPPRESS_CMD} +acc=npr +incdir+${INC_FILE} -work $(WORK_DIR) -mfcu -quiet
-DEFINE_MACROS = +define+
 
-# 🔹 SystemVerilog & Verilog Kaynak Dosyaları
 SV_SOURCES =  $(TCORE_DIR)/rtl/pkg/tcore_param.sv \
               $(wildcard $(TCORE_DIR)/rtl/core/*.sv) \
               $(wildcard $(TCORE_DIR)/rtl/core/branch_prediction/*.sv) \
@@ -38,127 +31,119 @@ SV_SOURCES =  $(TCORE_DIR)/rtl/pkg/tcore_param.sv \
               $(wildcard $(TCORE_DIR)/rtl/wrapper/*.sv) \
               $(wildcard $(TCORE_DIR)/rtl/wrapper/*.v)
 
-# 🔹 Test Bench ve Wrapper (ModelSim için)
-TB_FILE = $(TCORE_DIR)/rtl/tb/tb_wrapper.v
-TOP_LEVEL = tb_wrapper
-LIBRARY = work
+TB_FILE     = $(TCORE_DIR)/rtl/tb/tb_wrapper.v
+TOP_LEVEL   = tb_wrapper
+VERILATOR_TOP_LEVEL   = teknofest_wrapper
+LIBRARY     = work
+WORK_DIR    = work
+MEM_FILE    = $(TCORE_DIR)/test.mem
+FETCH_LOG   = fetch_log.txt
+PASS_FAIL_ADDR = pass_fail_addr.txt
+CHECK_SCRIPT   = $(TCORE_DIR)/sw/check_pass_fail.py
+DUMP_PARSER    = $(TCORE_DIR)/sw/dump_parser.py
+SIM_TIME    = 20000ns
+
+# ============================================================
+# 🔹 MODEL SIM TARGETS
+# ============================================================
+
 VSIM = vsim
 VLOG = vlog
 VOPT = vopt
 VLIB = vlib
-WORK_DIR = work
 
-# 🔹 Dump & Fetch Log Dosyaları
-FETCH_LOG = fetch_log.txt
-PASS_FAIL_ADDR = pass_fail_addr.txt
-CHECK_SCRIPT = $(TCORE_DIR)/sw/check_pass_fail.py
-DUMP_PARSER = $(TCORE_DIR)/sw/dump_parser.py
-
-# 🔹 RAM İçin Sabit Test Yükleme Dosyası
-MEM_FILE = $(TCORE_DIR)/test.mem
-
-# 🔹 Simülasyon Süresi (ModelSim için)
-SIM_TIME = 20000ns
-
-# ----------------------------------------------------------------------
-# Hedefler: ModelSim/QuestaSim ile çalıştırma
-# ----------------------------------------------------------------------
-
-# Varsayılan hedef (Tüm testleri ModelSim ile çalıştır)
 all: compile test_all
 
-# Tüm Hex testlerini sıralı çalıştır (ModelSim)
 test_all: $(HEX_FILES)
 	@echo "🔄 Running all RISC-V tests sequentially (ModelSim)..."
-	@rm -f test_results.txt sim_log.txt  # Önceki test ve logları temizle
+	@rm -f test_results.txt sim_log.txt
 	@for hexfile in $(HEX_FILES); do \
 		echo "▶ Running test with $$hexfile..."; \
-		make -f makefile single_test TEST_FILE="$$hexfile"; \
+		make -s single_test TEST_FILE="$$hexfile"; \
 	done
 	@echo "✅ All tests completed! Check test_results.txt for results."
 
-# Tek bir testin çalıştırılması (ModelSim)
 single_test:
 	@echo "🔍 Running test: $(TEST_FILE)"
-	@rm -f $(MEM_FILE)  # Önceki RAM dosyasını temizle
-	@cp "$(TEST_FILE)" "$(MEM_FILE)"  # RAM'e yeni test yükle
-	@make simulate > /dev/null 2>&1  # Batch modda simülasyonu sessiz çalıştır
-	@python3 $(DUMP_PARSER) $(TEST_FILE:.hex=.dump) > /dev/null 2>&1  # Dump dosyasını sessizce işle
-	@echo -n "[ $(notdir $(TEST_FILE)) ]: " >> test_results.txt  # Test ismini yaz
-	@python3 $(CHECK_SCRIPT) $(PASS_FAIL_ADDR) $(FETCH_LOG) | tee -a test_results.txt  # PASS/FAIL durumunu ekle
+	@rm -f $(MEM_FILE)
+	@cp "$(TEST_FILE)" "$(MEM_FILE)"
+	@make -s simulate
+	@python3 $(DUMP_PARSER) $(TEST_FILE:.hex=.dump) > /dev/null 2>&1
+	@echo -n "[ $(notdir $(TEST_FILE)) ]: " >> test_results.txt
+	@python3 $(CHECK_SCRIPT) $(PASS_FAIL_ADDR) $(FETCH_LOG) | tee -a test_results.txt
 
-# ModelSim/QuestaSim ile Batch modda simülasyon
 simulate: compile
 	$(VSIM) -c $(LIBRARY).$(TOP_LEVEL) -do "run $(SIM_TIME); quit" -t ns -voptargs=+acc=npr
 
-# ModelSim/QuestaSim ile GUI modunda simülasyon (Eski yöntem)
-simulate_gui: compile
-	@if [ -z "$(TEST_FILE)" ]; then \
-		echo "❌ Error: TEST_FILE is not set! Use 'make simulate_gui TEST_FILE=/path/to/test.hex'"; \
-		exit 1; \
-	fi
-	@echo "🔍 Simulating test in GUI mode: $(TEST_FILE)"
-	@rm -f $(MEM_FILE)  # Önceki RAM dosyasını temizle
-	@cp "$(TEST_FILE)" "$(MEM_FILE)"  # RAM'e yeni test yükle
-	$(VSIM) $(LIBRARY).$(TOP_LEVEL) -do "questa.do" -t ns -voptargs=+acc=npr
+compile: $(WORK_DIR)
+	$(VLOG) -work $(WORK_DIR) $(VLOG_OPTS) $(SV_SOURCES) $(TB_FILE)
 
-# ----------------------------------------------------------------------
-# Yeni Hedefler: Verilator ile çalıştırma
-# ----------------------------------------------------------------------
-# Not: Verilator kullanabilmek için tasarımınızın synthesizable olması
-# ve C++ testbench dosyanızın (örneğin, tb_wrapper.cpp) mevcut olması gerekir.
-# Aşağıda, Verilator ile simülasyon yapacak hedefler eklenmiştir.
+$(WORK_DIR):
+	$(VLIB) $(WORK_DIR)
 
-# Verilator ile derleme için C++ testbench dosyasının yolu (düzenleyin gerekirse)
-VERILATOR_TB = $(TCORE_DIR)/tb_wrapper.cpp
+clean:
+	rm -rf $(WORK_DIR) obj_dir *.log *.vcd *.fst test_results.txt $(FETCH_LOG) $(PASS_FAIL_ADDR)
+	rm -f transcript vsim.wlf modelsim.ini sim_log.txt
 
-# Verilator ile simülasyonu derleyip çalıştırma
-simulate_verilator: compile_verilator
-	@echo "🔍 Running simulation with Verilator..."
-	@./obj_dir/V$(TOP_LEVEL) | tee -a test_results.txt
+# ============================================================
+# 🔹 VERILATOR TARGETS
+# ============================================================
 
-# Verilator ile derleme
+VERILATOR_TB = $(TCORE_DIR)/rtl/tb/tb_wrapper.cpp
+# ⚙️ Verilator derleme
 compile_verilator:
-	@echo "Compiling design with Verilator..."
-	verilator --cc $(SV_SOURCES) $(TB_FILE) --exe $(VERILATOR_TB) --top-module $(TOP_LEVEL) --trace --trace-fst --trace-structs --build -I$(TCORE_DIR)/rtl/include --timing
+	@echo "⚙️  Compiling with Verilator (v5.040 safe mode, no fatal warnings)..."
+	verilator -O3 --cc $(SV_SOURCES) \
+		--exe $(VERILATOR_TB) \
+		--top-module $(VERILATOR_TOP_LEVEL) \
+		--trace --trace-vcd --trace-structs \
+		-I$(TCORE_DIR)/rtl/include --timing \
+		--build -j $(shell nproc) \
+		-Wno-LATCH -Wno-UNOPTFLAT -Wno-WIDTHEXPAND -Wno-WIDTHTRUNC \
+		-Wno-CASEINCOMPLETE -Wno-PINMISSING -Wno-PINCONNECTEMPTY \
+		-Wno-DECLFILENAME -Wno-IMPORTSTAR -Wno-VARHIDDEN \
+		-Wno-UNUSEDSIGNAL -Wno-UNUSEDPARAM -Wno-EOFNEWLINE \
+		-Wno-INITIALDLY -Wno-PROCASSINIT -Wno-GENUNNAMED \
+		--error-limit 0
 
-# Tek bir testin Verilator ile çalıştırılması
+# ▶ Tek test çalıştırma
+verilator:
+	@echo "🔍 Running Verilator simulation..."
+	@./obj_dir/V$(VERILATOR_TOP_LEVEL)
+
 single_test_verilator:
 	@echo "🔍 Running test with Verilator: $(TEST_FILE)"
 	@rm -f $(MEM_FILE)
 	@cp "$(TEST_FILE)" "$(MEM_FILE)"
-	@make simulate_verilator
+	@make -s compile_verilator
+	@./obj_dir/V$(VERILATOR_TOP_LEVEL) > verilator_run.log
 	@python3 $(DUMP_PARSER) $(TEST_FILE:.hex=.dump) > /dev/null 2>&1
 	@echo -n "[ $(notdir $(TEST_FILE)) ] (Verilator): " >> test_results.txt
 	@python3 $(CHECK_SCRIPT) $(PASS_FAIL_ADDR) $(FETCH_LOG) | tee -a test_results.txt
 
-# ----------------------------------------------------------------------
-# Derleme (ModelSim/QuestaSim için)
-$(WORK_DIR):
-	$(VLIB) $(WORK_DIR)
+# ▶ Tüm testleri sırayla çalıştır
+verilator_all: $(HEX_FILES)
+	@echo "🚀 Running all tests sequentially (Verilator)..."
+	@rm -f test_results.txt
+	@for hexfile in $(HEX_FILES); do \
+		echo "▶ Running test with $$hexfile..."; \
+		make -s single_test_verilator TEST_FILE="$$hexfile"; \
+	done
+	@echo "✅ Verilator batch tests done! Check test_results.txt."
 
-compile: $(WORK_DIR)
-	$(VLOG) -work $(WORK_DIR) $(VLOG_OPTS) $(SV_SOURCES) $(TB_FILE) $(DEFINE_MACROS)
-	#$(VOPT) $(VOPT_OPTS) $(LIBRARY).$(TOP_LEVEL)
+# ▶ Dump üretimi (gtkwave / vsim için)
+verilator_dump:
+	@echo "🧠 Running Verilator with waveform dump..."
+	@./obj_dir/V$(VERILATOR_TOP_LEVEL) > verilator_run.log
+	@echo "💾 Dump ready: dump.vcd  →  use gtkwave or vsim -view dump.vcd"
 
-# ----------------------------------------------------------------------
-# Optimizasyon (isteğe bağlı, ModelSim/QuestaSim için)
-#optimize: compile
-#	$(VOPT) -o $(WORK_DIR).$(TOP_LEVEL) $(LIBRARY).$(TOP_LEVEL)
+# ▶ Verilator simülasyonu (derleme + koşum)
+verilator_sim:
+	@echo "🚀 Building and running Verilator simulation..."
+	@make -s compile_verilator
+	@./obj_dir/V$(VERILATOR_TOP_LEVEL) 500000 > verilator_run.log
+	@echo "💾 Dump generated → waveform.vcd"
+	@echo "👀 To view:  gtkwave waveform.vcd &"
 
-# ----------------------------------------------------------------------
-# Dump'tan PASS ve FAIL Adreslerini Çıkar
-extract:
-	python3 $(DUMP_PARSER) $(DUMP_FILE) > /dev/null 2>&1
 
-# Test Sonucunu Kontrol Et
-check: extract
-	python3 $(CHECK_SCRIPT) $(PASS_FAIL_ADDR) $(FETCH_LOG) > /dev/null 2>&1
-
-# ----------------------------------------------------------------------
-# Temizlik
-clean:
-	rm -rf $(WORK_DIR)
-	rm -f transcript vsim.wlf modelsim.ini test_results.txt fetch_log.txt pass_fail_addr.txt sim_log.txt
-
-.PHONY: all compile simulate simulate_gui simulate_verilator single_test single_test_verilator optimize extract check clean
+.PHONY: all compile simulate verilator verilator_all single_test single_test_verilator clean

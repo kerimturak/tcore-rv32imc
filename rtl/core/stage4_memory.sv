@@ -100,8 +100,8 @@ module stage4_memory
 
 
   always_comb begin
-    pherip_valid = !memregion && !stall_i;
-    pherip_addr  = !memregion ? alu_result_i : '0;
+    pherip_addr  = alu_result_i;
+    pherip_valid = (pherip_addr[29] || pherip_addr[30]) && !memregion && !stall_i;
     pherip_sel   = !memregion && !stall_i ? 4'b1111 : 4'b0000;
     pherip_wdata = !memregion ? write_data_i : '0;
   end

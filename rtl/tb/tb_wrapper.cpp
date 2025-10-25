@@ -1,44 +1,64 @@
-#include "Vtb_wrapper.h"       // Verilator tarafından üretilen top module header'ı
+#include "Vteknofest_wrapper.h"
 #include "verilated.h"
-#ifdef TRACE
 #include "verilated_vcd_c.h"
-#endif
+#include <iostream>
+#include <cstdlib>  // for atoi
 
-vluint64_t main_time = 0;       // Simülasyon zamanı (ns cinsinden)
-
-double sc_time_stamp() {       // Verilator simülasyonu için gereklidir
-    return main_time;
-}
+vluint64_t main_time = 0;  // global simulation time
+double sc_time_stamp() { return main_time; }
 
 int main(int argc, char **argv) {
     Verilated::commandArgs(argc, argv);
-    Vtb_wrapper* top = new Vtb_wrapper;
+    Verilated::traceEverOn(true);
 
-    #ifdef TRACE
-    // VCD dalga dosyası oluşturma (isteğe bağlı)
-    VerilatedVcdC* tfp = new VerilatedVcdC;
+    // Instance
+    Vteknofest_wrapper *top = new Vteknofest_wrapper;
+
+    // Trace setup (VCD format)
+    VerilatedVcdC *tfp = new VerilatedVcdC;
     top->trace(tfp, 99);
-    tfp->open("dump.vcd");
-    #endif
+    tfp->open("waveform.vcd");
 
-    // Basit bir simülasyon döngüsü (örnek: 200 ns çalıştır)
-    for (main_time = 0; main_time < 200; main_time++) {
-        // Saat sinyali üretimi (örnek: 10 ns per dönem)
-        top->clk_i = ((main_time % 10) < 5) ? 0 : 1;
-        if (main_time == 20) {
-            top->rst_ni = 1; // 20 ns sonra reset'i aktif et
-        }
-        top->eval();
-        #ifdef TRACE
-        tfp->dump(main_time);
-        #endif
+    // Simulation length (parametric)
+    uint64_t max_cycles = 1000000;  // default: 1M
+    if (argc > 1) {
+        max_cycles = std::strtoull(argv[1], nullptr, 10);
+        std::cout << "⚙️  Custom simulation length set to " << max_cycles << " cycles." << std::endl;
+    } else {
+        std::cout << "⚙️  Using default simulation length of 1,000,000 cycles." << std::endl;
     }
 
-    #ifdef TRACE
-    tfp->close();
-    delete tfp;
-    #endif
+    // Initialize signals
+    top->clk_i = 0;
+    top->rst_ni = 0;
+    top->program_rx_i = 1;
+    top->uart_rx_i = 1;
 
+    // Reset pulse
+    for (int i = 0; i < 20; i++) {  // ~100 ns reset duration
+        top->clk_i = !top->clk_i;
+        top->eval();
+        tfp->dump(main_time++);
+    }
+    top->rst_ni = 1;
+
+    std::cout << "🚀 Starting Verilator simulation..." << std::endl;
+
+    // Main simulation loop
+    while (!Verilated::gotFinish() && main_time < max_cycles) {
+        top->clk_i = !top->clk_i;
+        top->eval();
+        tfp->dump(main_time++);
+
+        // Optional progress message
+        if (main_time % 100000 == 0)
+            std::cout << "⏱️  Cycle: " << main_time << std::endl;
+    }
+
+    tfp->close();
+    std::cout << "✅ Simulation finished after " << main_time << " cycles." << std::endl;
+
+    delete tfp;
     delete top;
     return 0;
 }

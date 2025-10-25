@@ -29,7 +29,7 @@ module teknofest_wrapper (
 
   // 50 MHz clocking wizard ip
   //wire locked;
-  //wire clk_o;
+  wire clk_o;
   //clk_wiz_0 dutclk (
   //  .clk_out1 (clk_o    ),
   //  .clk_in1  (clk_i    ),
@@ -55,7 +55,7 @@ module teknofest_wrapper (
   parameter [31:0] RAM_MASK_ADDR = 32'h000f_ffff;
   parameter [31:0] CHIP_IO_BASE_ADDR = SPI_BASE_ADDR + SPI_MASK_ADDR;
   parameter [31:0] CHIP_IO_MASK_ADDR = RAM_BASE_ADDR + RAM_MASK_ADDR;
-  parameter RAM_DEPTH = 8*1024;  //131072; // 32 kb
+  parameter RAM_DEPTH = 8 * 1024;  //131072; // 32 kb
 
   wire                  iomem_valid;
   wire                  iomem_ready;
